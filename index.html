@@ -566,6 +566,119 @@
       vertical-align: middle;
     }
 
+    /* Coach: week switcher above day list */
+    .coach-weeks {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 8px 0 12px;
+    }
+    .coach-weeks button {
+      background: var(--page-bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      font: inherit;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .coach-weeks button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .coach-weeks button .cwc {
+      opacity: 0.75;
+      margin-left: 4px;
+      font-weight: 500;
+    }
+
+    /* Coach: per-day accordion */
+    .coach-day {
+      background: var(--page-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .coach-day.today { border-color: var(--accent); }
+    .coach-day > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .coach-day > summary::-webkit-details-marker { display: none; }
+    .cd-info { flex: 1; min-width: 0; }
+    .cd-title {
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cd-today-mark {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 1px 6px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .cd-types {
+      margin-top: 4px;
+      font-size: 14px;
+      letter-spacing: 4px;
+      line-height: 1;
+    }
+    .cd-types .empty { opacity: 0.18; filter: grayscale(1); }
+    .cd-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .cd-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-published { background: rgba(120,200,120,0.12); color: #6ec46e; }
+    .status-new       { background: var(--accent-soft);     color: var(--accent); }
+    .status-modified  { background: rgba(255,170,80,0.12);  color: #ffa64d; }
+    .status-deleted   { background: rgba(180,180,180,0.15); color: var(--muted); text-decoration: line-through; }
+    .cd-publish-btn {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .cd-publish-btn:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.6; }
+    .cd-body {
+      padding: 0 12px 8px;
+      border-top: 1px solid var(--border);
+    }
+    .cd-body .coach-meal { padding: 10px 0; }
+    .cd-body .cd-empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 0;
+    }
+
     /* TABLE */
     .table-wrap {
       overflow-x: auto;
@@ -910,9 +1023,10 @@
         <div class="card">
           <h2>Публикация для всех участников</h2>
           <div class="muted" style="font-size:13px; margin-bottom:10px">
-            Вставь один раз Personal Access Token из GitHub. После этого нажатие <b>«Опубликовать»</b>
-            запишет твои блюда в <code id="pubRepoName">data.json</code>, и у всех участников меню обновится
-            через 1–2 минуты. Токен хранится только на этом устройстве.
+            Заполняй меню сколько угодно — оно остаётся <b>черновиком</b> на твоём устройстве.
+            На сервер день уходит <b>только когда ты нажмёшь «Опубл.»</b> на нужном дне
+            (или «Опубликовать всё» — синхронизировать все изменения одним коммитом
+            в <code id="pubRepoName">data.json</code>). Токен хранится только на этом устройстве.
           </div>
 
           <div>
@@ -926,7 +1040,7 @@
 
           <div class="grid-2" style="margin-top:12px">
             <button type="button" class="btn btn--ghost" id="cTokenSaveBtn">Сохранить токен</button>
-            <button type="button" class="btn" id="cPublishBtn" disabled>Опубликовать</button>
+            <button type="button" class="btn" id="cPublishBtn" disabled>Опубликовать всё</button>
           </div>
 
           <div class="muted" style="margin-top:10px; font-size:12px" id="cPublishInfo">—</div>
@@ -988,20 +1102,11 @@
     // ===========================================================
     window.fallbackData = {
       marathon: { title: "Марафон −10", total_days: 21, start_date: "2025-06-01" },
+      coach_overrides: {},
       weeks: [
-        {
-          week: 1,
-          menu: {
-            "Понедельник": { breakfast: "Овсяная каша с ягодами", lunch: "Куриный суп, цельнозерновой хлеб", dinner: "Греческий салат с оливковым маслом" },
-            "Вторник":     { breakfast: "Яйца 2 шт, помидоры", lunch: "Гречка с куриным филе", dinner: "Творог 5%, фрукты" },
-            "Среда":       { breakfast: "Овсянка с бананом", lunch: "Рыба на пару, овощи", dinner: "Салат из свежих овощей" },
-            "Четверг":     { breakfast: "Омлет 2 яйца, зелень", lunch: "Куриный бульон с овощами", dinner: "Творог с ягодами" },
-            "Пятница":     { breakfast: "Гречневая каша", lunch: "Запечённая куриная грудка, огурцы", dinner: "Кефир 1%, яблоко" },
-            "Суббота":     { breakfast: "Яичница, тост цельнозерновой", lunch: "Суп-пюре из тыквы", dinner: "Греческий йогурт, орехи" },
-            "Воскресенье": { breakfast: "Блины из овсяной муки", lunch: "Паста из цельнозерновой муки, курица", dinner: "Лёгкий салат, кефир" }
-          },
-          shopping: ["Куриное филе 1 кг","Овсянка 500 г","Яйца 10 шт","Творог 5% 400 г","Гречка 500 г","Помидоры 500 г","Огурцы свежие 3 шт","Оливковое масло","Кефир 1% 1 л","Греческий йогурт 2 шт","Бананы 3 шт","Яблоки 4 шт"]
-        }
+        { week: 1, menu: {}, shopping: [] },
+        { week: 2, menu: {}, shopping: [] },
+        { week: 3, menu: {}, shopping: [] }
       ]
     };
 
@@ -2215,17 +2320,38 @@
 
       const local = getCoachOverrides();
       const published = getPublishedOverrides();
-      const localDays = Object.keys(local).length;
-      const publishedDays = Object.keys(published).length;
+
+      // Диагностика по дням
+      const allDates = new Set([...Object.keys(local), ...Object.keys(published)]);
+      let drafts = 0, modified = 0, deleted = 0, publishedDays = 0;
+      allDates.forEach(d => {
+        const s = dayPublishStatus(local[d], published[d]);
+        if (s.kind === "new")       drafts++;
+        else if (s.kind === "modified") modified++;
+        else if (s.kind === "deleted")  deleted++;
+        else if (s.kind === "published") publishedDays++;
+      });
+      const pendingDays = drafts + modified + deleted;
+
       const localMeals = countMeals(local);
       const publishedMeals = countMeals(published);
-      $("#cPublishInfo").innerHTML =
-        "Локально: <b>" + localDays + (localDays === 1 ? " день" : " дн.") + " / " +
-        localMeals + (localMeals === 1 ? " блюдо" : " блюд") + "</b> · " +
-        "Опубликовано: <b>" + publishedDays + " дн. / " + publishedMeals + " блюд</b>" +
-        (deepEqual(local, published) ? "" : ' · <span style="color:var(--accent)">есть несохранённые изменения</span>');
 
-      $("#cPublishBtn").disabled = !token || localDays === 0;
+      let parts = [];
+      parts.push("Локально: <b>" + Object.keys(local).length + " дн. / " + localMeals + " блюд</b>");
+      parts.push("На сервере: <b>" + publishedDays + " дн. / " + publishedMeals + " блюд</b>");
+      if (pendingDays > 0) {
+        const extras = [];
+        if (drafts)   extras.push(drafts   + " нов.");
+        if (modified) extras.push(modified + " изм.");
+        if (deleted)  extras.push(deleted  + " удал.");
+        parts.push('<span style="color:var(--accent)">Не опубликовано: <b>' +
+                   pendingDays + ' дн.</b> (' + extras.join(", ") + ')</span>');
+      } else if (Object.keys(local).length > 0) {
+        parts.push('<span style="color:#6ec46e">всё опубликовано</span>');
+      }
+      $("#cPublishInfo").innerHTML = parts.join(" · ");
+
+      $("#cPublishBtn").disabled = !token || pendingDays === 0;
 
       const last = localStorage.getItem("gh_last_publish");
       $("#cPublishStatus").textContent = last
@@ -2243,6 +2369,116 @@
       catch (e) { return false; }
     }
 
+    // Получить и распарсить актуальный data.json + SHA из GitHub.
+    async function ghFetchData(token) {
+      const url = "https://api.github.com/repos/" + REPO.owner + "/" + REPO.name +
+                  "/contents/" + encodeURIComponent(REPO.file) + "?ref=" + encodeURIComponent(REPO.branch);
+      const res = await fetch(url, {
+        headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error("GitHub GET " + res.status + ": " + t.slice(0, 200));
+      }
+      const info = await res.json();
+      const content = b64ToUtf8(info.content.replace(/\s/g, ""));
+      let data;
+      try { data = JSON.parse(content); }
+      catch (e) { throw new Error("Не удалось разобрать текущий data.json"); }
+      return { data, sha: info.sha };
+    }
+
+    // PUT нового содержимого с известным SHA.
+    async function ghPutData(token, newData, sha, commitMsg) {
+      const newContent = JSON.stringify(newData, null, 2) + "\n";
+      const b64 = utf8ToB64(newContent);
+      const res = await fetch(
+        "https://api.github.com/repos/" + REPO.owner + "/" + REPO.name +
+        "/contents/" + encodeURIComponent(REPO.file),
+        {
+          method: "PUT",
+          headers: {
+            Authorization: "Bearer " + token,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: commitMsg,
+            content: b64,
+            sha: sha,
+            branch: REPO.branch
+          })
+        }
+      );
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error("GitHub PUT " + res.status + ": " + t.slice(0, 200));
+      }
+      const j = await res.json();
+      return (j.commit && j.commit.sha) || "";
+    }
+
+    function rememberPublishTs(sha) {
+      const now = new Date();
+      const ts = pad2(now.getDate()) + "." + pad2(now.getMonth() + 1) + " " +
+                 pad2(now.getHours()) + ":" + pad2(now.getMinutes()) +
+                 (sha ? " · " + sha.slice(0, 7) : "");
+      localStorage.setItem("gh_last_publish", ts);
+    }
+
+    // Опубликовать ОДИН день: если в локальной копии есть — записать,
+    // если нет (день удалён локально) — удалить из удалённой публикации.
+    async function publishDayToGitHub(dateIso, btn) {
+      const token = getGhToken();
+      if (!token) { toast("Сначала сохрани токен"); return; }
+      const originalText = btn ? btn.textContent : "";
+      if (btn) { btn.disabled = true; btn.textContent = "…"; }
+
+      try {
+        const { data: remoteData, sha } = await ghFetchData(token);
+        if (!remoteData.coach_overrides || typeof remoteData.coach_overrides !== "object") {
+          remoteData.coach_overrides = {};
+        }
+        const local = getCoachOverrides();
+        const localDay = local[dateIso];
+        let action;
+        if (localDay && Object.keys(localDay).length > 0) {
+          remoteData.coach_overrides[dateIso] = localDay;
+          action = "update";
+        } else {
+          if (!(dateIso in remoteData.coach_overrides)) {
+            toast("На сервере и так нет этого дня");
+            if (btn) { btn.textContent = originalText; btn.disabled = false; }
+            // На всякий случай синхронизируем UI:
+            state.data.coach_overrides = remoteData.coach_overrides;
+            renderCoachList(); renderPublishUI();
+            return;
+          }
+          delete remoteData.coach_overrides[dateIso];
+          action = "delete";
+        }
+
+        const commitMsg = (action === "delete" ? "Coach: remove " : "Coach: publish ") + dateIso;
+        const commitSha = await ghPutData(token, remoteData, sha, commitMsg);
+
+        state.data.coach_overrides = remoteData.coach_overrides;
+        rememberPublishTs(commitSha);
+        toast(action === "delete" ? "День удалён с сервера" : "День опубликован");
+        renderCoachList();
+        renderPublishUI();
+        renderMenuTab();
+        renderShoppingTab();
+        renderArchiveTab();
+      } catch (e) {
+        console.error(e);
+        alert("Ошибка публикации дня " + dateIso + ":\n\n" + e.message +
+              "\n\nЕсли это конфликт SHA — обнови страницу и попробуй ещё раз.");
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
+      }
+    }
+
+    // «Опубликовать все изменения»: полная синхронизация локального
+    // coach_overrides с удалённым data.json (одним коммитом).
     async function publishMenuToGitHub() {
       const token = getGhToken();
       if (!token) { toast("Сначала сохрани токен"); return; }
@@ -2252,67 +2488,22 @@
       btn.textContent = "Публикую…";
 
       try {
-        // 1) Получить текущий data.json и его SHA
-        const url = "https://api.github.com/repos/" + REPO.owner + "/" + REPO.name +
-                    "/contents/" + encodeURIComponent(REPO.file) + "?ref=" + encodeURIComponent(REPO.branch);
-        const getRes = await fetch(url, {
-          headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }
-        });
-        if (!getRes.ok) {
-          const t = await getRes.text();
-          throw new Error("GitHub GET " + getRes.status + ": " + t.slice(0, 200));
-        }
-        const fileInfo = await getRes.json();
-        const remoteContent = b64ToUtf8(fileInfo.content.replace(/\s/g, ""));
-        let remoteData;
-        try { remoteData = JSON.parse(remoteContent); }
-        catch (e) { throw new Error("Не удалось разобрать текущий data.json"); }
+        const { data: remoteData, sha } = await ghFetchData(token);
+        const local = getCoachOverrides();
+        remoteData.coach_overrides = local;
 
-        // 2) Подставить наш срез
-        remoteData.coach_overrides = getCoachOverrides();
+        const localDays = Object.keys(local).length;
+        const commitMsg = "Coach: sync all days (" + localDays + " day" + (localDays === 1 ? "" : "s") + ")";
+        const commitSha = await ghPutData(token, remoteData, sha, commitMsg);
 
-        // 3) Закодировать и отправить PUT
-        const newContent = JSON.stringify(remoteData, null, 2) + "\n";
-        const b64 = utf8ToB64(newContent);
-        const localDays = Object.keys(getCoachOverrides()).length;
-        const commitMsg = "Coach: update menu (" + localDays + " day" + (localDays === 1 ? "" : "s") + ")";
-
-        const putRes = await fetch(
-          "https://api.github.com/repos/" + REPO.owner + "/" + REPO.name +
-          "/contents/" + encodeURIComponent(REPO.file),
-          {
-            method: "PUT",
-            headers: {
-              Authorization: "Bearer " + token,
-              Accept: "application/vnd.github+json",
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              message: commitMsg,
-              content: b64,
-              sha: fileInfo.sha,
-              branch: REPO.branch
-            })
-          }
-        );
-        if (!putRes.ok) {
-          const t = await putRes.text();
-          throw new Error("GitHub PUT " + putRes.status + ": " + t.slice(0, 200));
-        }
-        const putJson = await putRes.json();
-        const sha = (putJson.commit && putJson.commit.sha) || "";
-
-        // 4) Зафиксировать в локальном state.data, чтобы UI сразу показал актуальное
         state.data.coach_overrides = remoteData.coach_overrides;
-
-        const now = new Date();
-        const ts = pad2(now.getDate()) + "." + pad2(now.getMonth() + 1) + " " +
-                   pad2(now.getHours()) + ":" + pad2(now.getMinutes()) +
-                   (sha ? " · " + sha.slice(0, 7) : "");
-        localStorage.setItem("gh_last_publish", ts);
-
-        toast("Опубликовано! У всех обновится через 1–2 мин.");
+        rememberPublishTs(commitSha);
+        toast("Все изменения опубликованы");
+        renderCoachList();
         renderPublishUI();
+        renderMenuTab();
+        renderShoppingTab();
+        renderArchiveTab();
       } catch (e) {
         console.error(e);
         alert("Ошибка публикации:\n\n" + e.message +
@@ -2320,7 +2511,7 @@
               REPO.owner + "/" + REPO.name + ".");
       } finally {
         btn.textContent = originalText;
-        btn.disabled = !getGhToken() || Object.keys(getCoachOverrides()).length === 0;
+        renderPublishUI();
       }
     }
 
@@ -2423,44 +2614,234 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    // ---------- Coach: helpers for grouped list ----------
+    // Какая «неделя марафона» у даты ISO (>=1; -1 если до старта; total_weeks+1 если после).
+    function weekIndexForDate(iso) {
+      const d = new Date(iso + "T00:00:00");
+      if (isNaN(d)) return null;
+      const start = getMarathonStart();
+      const diff = Math.floor((startOfDay(d) - start) / 86400000);
+      if (diff < 0) return -1;
+      const totalWeeks = Math.max(1, Math.ceil((state.data.marathon.total_days || 21) / 7));
+      const w = Math.floor(diff / 7) + 1;
+      return Math.min(w, totalWeeks + 1);
+    }
+
+    function totalMarathonWeeks() {
+      return Math.max(1, Math.ceil((state.data.marathon.total_days || 21) / 7));
+    }
+
+    function bucketDatesByWeek(dateSet) {
+      const buckets = {};
+      const otherBefore = [];
+      const otherAfter  = [];
+      const totalWeeks = totalMarathonWeeks();
+      [...dateSet].sort().forEach(iso => {
+        const w = weekIndexForDate(iso);
+        if (w == null) return;
+        if (w === -1)                     otherBefore.push(iso);
+        else if (w > totalWeeks)          otherAfter.push(iso);
+        else {
+          if (!buckets[w]) buckets[w] = [];
+          buckets[w].push(iso);
+        }
+      });
+      return { buckets, otherBefore, otherAfter, totalWeeks };
+    }
+
+    // Сравнение состояния дня (locally vs published) → статус.
+    function dayPublishStatus(localDay, publishedDay) {
+      const inLocal = !!localDay && Object.keys(localDay).length > 0;
+      const inPub   = !!publishedDay && Object.keys(publishedDay).length > 0;
+      if (inLocal && !inPub)  return { kind: "new",       label: "черновик",     canPublish: true  };
+      if (!inLocal && inPub)  return { kind: "deleted",   label: "удалится",     canPublish: true  };
+      if (inLocal && inPub) {
+        return deepEqual(localDay, publishedDay)
+          ? { kind: "published", label: "опубликовано", canPublish: false }
+          : { kind: "modified",  label: "изменено",     canPublish: true  };
+      }
+      return { kind: "published", label: "—", canPublish: false };
+    }
+
+    // Текущая выбранная неделя в списке коуча (с памятью).
+    function getCoachWeek() {
+      const stored = parseInt(localStorage.getItem("coach_week") || "", 10);
+      if (isFinite(stored) && stored >= 1) return stored;
+      const todayW = weekIndexForDate(isoDate(new Date()));
+      const tw = totalMarathonWeeks();
+      return (todayW && todayW >= 1 && todayW <= tw) ? todayW : 1;
+    }
+    function setCoachWeek(w) { localStorage.setItem("coach_week", String(w)); }
+
     function renderCoachList() {
       const list = $("#coachList");
       list.innerHTML = "";
-      const all = getCoachOverrides();
-      const entries = [];
-      Object.keys(all).sort().forEach(date => {
-        const day = all[date] || {};
-        sortedMealsOfDay(day).forEach(({ key, meal, def, order }) => {
-          entries.push({ date, mealKey: key, meal, def, order });
-        });
-      });
 
-      $("#coachListCount").textContent = entries.length
-        ? entries.length + (entries.length === 1 ? " блюдо" : (entries.length < 5 ? " блюда" : " блюд"))
+      const local     = getCoachOverrides();
+      const published = getPublishedOverrides();
+
+      // Все даты, которые надо показать (есть локально или опубликовано).
+      const allDates = new Set([...Object.keys(local), ...Object.keys(published)]);
+      const totalDays = allDates.size;
+      let totalMeals = 0;
+      allDates.forEach(d => { totalMeals += Object.keys(local[d] || published[d] || {}).length; });
+
+      $("#coachListCount").textContent = totalDays
+        ? totalDays + " дн. / " + totalMeals + " блюд"
         : "пусто";
 
-      if (entries.length === 0) {
+      if (totalDays === 0) {
         list.innerHTML = '<div class="muted" style="padding:12px 0">Ещё ничего не заполнено. Заполните форму выше — блюда появятся здесь и сразу попадут на вкладку «Меню».</div>';
         return;
       }
 
-      entries.forEach(({ date, mealKey, meal, def, order }) => {
-        const row = document.createElement("div");
-        row.className = "coach-meal";
-        const isObj = meal && typeof meal === "object";
-        const title = (isObj ? meal.title : meal) || "—";
-        const d = new Date(date + "T00:00:00");
-        const isCustomOrder = isObj && typeof meal.order === "number" && meal.order !== def.default_order;
-        const orderMark = isCustomOrder ? '<span class="order-badge">#' + order + '</span>' : '';
-        const sub = pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + " · " +
-                    getDayOfWeekRu(d) + " · " + def.icon + " " + def.name;
-        const main = document.createElement("div");
-        main.className = "cm-main";
-        main.innerHTML =
-          '<div class="cm-title">' + escHTML(title) + orderMark + '</div>' +
-          '<div class="cm-sub">' + escHTML(sub) + '</div>';
-        row.appendChild(main);
+      const { buckets, otherBefore, otherAfter, totalWeeks } = bucketDatesByWeek(allDates);
 
+      // Переключатель недель.
+      const switcher = document.createElement("div");
+      switcher.className = "coach-weeks";
+      const activeWeek = clampCoachWeek(getCoachWeek(), buckets, otherBefore, otherAfter, totalWeeks);
+
+      for (let w = 1; w <= totalWeeks; w++) {
+        const cnt = (buckets[w] || []).length;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.w = String(w);
+        if (w === activeWeek) b.classList.add("active");
+        b.innerHTML = "Нед. " + w + (cnt ? '<span class="cwc">· ' + cnt + '</span>' : "");
+        b.addEventListener("click", () => { setCoachWeek(w); renderCoachList(); });
+        switcher.appendChild(b);
+      }
+      if (otherBefore.length) {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.w = "before";
+        if (activeWeek === "before") b.classList.add("active");
+        b.innerHTML = "До старта<span class=\"cwc\">· " + otherBefore.length + "</span>";
+        b.addEventListener("click", () => { setCoachWeek("before"); renderCoachList(); });
+        switcher.appendChild(b);
+      }
+      if (otherAfter.length) {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.w = "after";
+        if (activeWeek === "after") b.classList.add("active");
+        b.innerHTML = "После<span class=\"cwc\">· " + otherAfter.length + "</span>";
+        b.addEventListener("click", () => { setCoachWeek("after"); renderCoachList(); });
+        switcher.appendChild(b);
+      }
+      list.appendChild(switcher);
+
+      // Какие даты показать в активной неделе.
+      let dates = [];
+      if (activeWeek === "before")     dates = otherBefore;
+      else if (activeWeek === "after") dates = otherAfter;
+      else                             dates = buckets[activeWeek] || [];
+
+      if (dates.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.style.padding = "12px 0";
+        empty.textContent = "На этой неделе пока ничего нет.";
+        list.appendChild(empty);
+        return;
+      }
+
+      const todayIso = isoDate(new Date());
+      dates.forEach(iso => {
+        list.appendChild(buildCoachDayCard(iso, local[iso], published[iso], todayIso));
+      });
+    }
+
+    function clampCoachWeek(curr, buckets, otherBefore, otherAfter, totalWeeks) {
+      const isValid =
+        (typeof curr === "number" && curr >= 1 && curr <= totalWeeks && (buckets[curr] || []).length) ||
+        (curr === "before" && otherBefore.length) ||
+        (curr === "after"  && otherAfter.length);
+      if (isValid) return curr;
+      // первая непустая неделя, иначе 1
+      for (let w = 1; w <= totalWeeks; w++) if ((buckets[w] || []).length) return w;
+      if (otherBefore.length) return "before";
+      if (otherAfter.length)  return "after";
+      return 1;
+    }
+
+    function buildCoachDayCard(iso, localDay, publishedDay, todayIso) {
+      const det = document.createElement("details");
+      det.className = "coach-day";
+      if (iso === todayIso) { det.open = true; det.classList.add("today"); }
+
+      const status = dayPublishStatus(localDay, publishedDay);
+      const d = new Date(iso + "T00:00:00");
+      const filledTypes = new Set(Object.keys(localDay || publishedDay || {}));
+      const types = MEAL_KEYS.map(m =>
+        filledTypes.has(m.key)
+          ? '<span>' + m.icon + '</span>'
+          : '<span class="empty">' + m.icon + '</span>'
+      ).join("");
+
+      const sum = document.createElement("summary");
+      sum.innerHTML =
+        '<div class="cd-info">' +
+          '<div class="cd-title">' + getDayOfWeekRu(d) + ' · ' + pad2(d.getDate()) + '.' + pad2(d.getMonth()+1) +
+            (iso === todayIso ? ' <span class="cd-today-mark">сегодня</span>' : '') +
+          '</div>' +
+          '<div class="cd-types">' + types + '</div>' +
+        '</div>' +
+        '<div class="cd-controls">' +
+          '<span class="cd-status status-' + status.kind + '">' + escHTML(status.label) + '</span>' +
+          (status.canPublish
+            ? '<button class="cd-publish-btn" type="button" data-pub-date="' + iso + '">Опубл.</button>'
+            : '') +
+        '</div>';
+      det.appendChild(sum);
+
+      const pubBtn = sum.querySelector(".cd-publish-btn");
+      if (pubBtn) {
+        pubBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          publishDayToGitHub(iso, pubBtn);
+        });
+      }
+
+      const body = document.createElement("div");
+      body.className = "cd-body";
+
+      // В теле показываем актуальный (локальный) состав; для "deleted" — что лежит на сервере.
+      const dayToShow = localDay && Object.keys(localDay).length > 0 ? localDay : publishedDay;
+      const meals = sortedMealsOfDay(dayToShow || {});
+      if (meals.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "cd-empty";
+        empty.textContent = "В этот день нет блюд.";
+        body.appendChild(empty);
+      } else {
+        meals.forEach(({ key, meal, def, order }) => {
+          body.appendChild(buildCoachMealRow(iso, key, meal, def, order, !localDay));
+        });
+      }
+      det.appendChild(body);
+      return det;
+    }
+
+    function buildCoachMealRow(date, mealKey, meal, def, order, isDeletedDay) {
+      const row = document.createElement("div");
+      row.className = "coach-meal";
+      const isObj = meal && typeof meal === "object";
+      const title = (isObj ? meal.title : meal) || "—";
+      const isCustomOrder = isObj && typeof meal.order === "number" && meal.order !== def.default_order;
+      const orderMark = isCustomOrder ? '<span class="order-badge">#' + order + '</span>' : '';
+      const sub = def.icon + " " + def.name +
+                  (isDeletedDay ? " · будет удалено" : "");
+      const main = document.createElement("div");
+      main.className = "cm-main";
+      main.innerHTML =
+        '<div class="cm-title">' + escHTML(title) + orderMark + '</div>' +
+        '<div class="cm-sub">' + escHTML(sub) + '</div>';
+      row.appendChild(main);
+
+      // Для "удалится" — кнопки редактирования/удаления не нужны:
+      // блюдо уже отсутствует локально.
+      if (!isDeletedDay) {
         const edit = document.createElement("button");
         edit.className = "cm-edit"; edit.type = "button"; edit.textContent = "Изм.";
         edit.addEventListener("click", () => populateCoachForm(date, mealKey, isObj ? meal : { title: meal }));
@@ -2480,8 +2861,8 @@
           toast("Удалено");
         });
         row.appendChild(del);
-        list.appendChild(row);
-      });
+      }
+      return row;
     }
 
     // ===========================================================
