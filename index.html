@@ -387,29 +387,32 @@
     /* TABLE */
     .table-wrap {
       overflow-x: auto;
-      margin: 0 -16px;
-      padding: 0 16px;
+      -webkit-overflow-scrolling: touch;
     }
     table.archive {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-      min-width: 480px;
+      font-size: 12px;
+      table-layout: fixed;
     }
     table.archive th, table.archive td {
-      padding: 8px 6px;
+      padding: 6px 2px;
       text-align: center;
       border-bottom: 1px solid var(--border);
-      white-space: nowrap;
+      word-break: break-word;
     }
     table.archive th {
       color: var(--muted);
-      font-weight: 500;
+      font-weight: 600;
       font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
-    table.archive td.day { font-weight: 600; color: var(--accent); }
+    /* Узкие колонки замеров и широкие — для веса/шагов */
+    table.archive col.c-day   { width: 9%; }
+    table.archive col.c-date  { width: 16%; }
+    table.archive col.c-w     { width: 15%; }
+    table.archive col.c-st    { width: 18%; }
+    table.archive col.c-meas  { width: 14%; }
+    table.archive td.day { font-weight: 700; color: var(--accent); }
     table.archive td.today { background: rgba(233, 77, 107, 0.08); }
     table.archive td.empty { color: #c7cbd1; }
 
@@ -585,10 +588,19 @@
           <h2>История замеров</h2>
           <div class="table-wrap">
             <table class="archive" id="archiveTable">
+              <colgroup>
+                <col class="c-day">
+                <col class="c-date">
+                <col class="c-w">
+                <col class="c-st">
+                <col class="c-meas">
+                <col class="c-meas">
+                <col class="c-meas">
+              </colgroup>
               <thead>
                 <tr>
                   <th>День</th><th>Дата</th><th>Вес</th><th>Шаги</th>
-                  <th>Талия</th><th>Бёдра</th><th>Грудь</th>
+                  <th>Тал.</th><th>Бёд.</th><th>Грудь</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -790,6 +802,11 @@
       bindForm();
       renderAll();
       maybeOnboard();
+
+      const hashTab = (location.hash.match(/tab=([a-z]+)/) || [])[1];
+      if (hashTab && ["measurements","menu","shopping","archive"].includes(hashTab)) {
+        showTab(hashTab);
+      }
     }
 
     function renderAll() {
@@ -1202,7 +1219,7 @@
           { v: i, cls: "day" },
           { v: fmtShort(d) },
           { v: e && e.weight != null ? round1(e.weight) : null },
-          { v: e && e.steps  != null ? e.steps.toLocaleString("ru-RU") : null },
+          { v: e && e.steps  != null ? String(e.steps) : null },
           { v: e && e.waist  != null ? round1(e.waist) : null },
           { v: e && e.hips   != null ? round1(e.hips)  : null },
           { v: e && e.chest  != null ? round1(e.chest) : null }
