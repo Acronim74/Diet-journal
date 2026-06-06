@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Марафон">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>Марафон −10</title>
+  <style>
+    :root {
+      --bg-dark: #1a1a2e;
+      --accent: #e94d6b;
+      --accent-soft: #fde2e8;
+      --page-bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6c757d;
+      --border: #e9ecef;
+      --success: #22c55e;
+      --shadow: 0 1px 3px rgba(26, 26, 46, 0.06), 0 1px 2px rgba(26, 26, 46, 0.04);
+      --radius: 12px;
+      --header-h: 56px;
+      --nav-h: 64px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--page-bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.45;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #app {
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--page-bg);
+      min-height: 100vh;
+      position: relative;
+      box-shadow: 0 0 24px rgba(26, 26, 46, 0.05);
+    }
+
+    /* HEADER */
+    #topBar {
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--header-h);
+      background: var(--bg-dark);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 50;
+      padding-top: env(safe-area-inset-top, 0);
+      height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+    }
+    #topBar .title { font-size: 16px; font-weight: 500; }
+    #topBar .day-indicator { font-size: 13px; color: var(--accent); font-weight: 500; }
+
+    /* CONTENT */
+    main#content {
+      padding: 16px;
+      padding-top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 16px);
+      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+    }
+
+    .tab-content { animation: fadeIn 150ms ease; }
+    .tab-content[hidden] { display: none; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* BOTTOM NAV */
+    #bottomNav {
+      position: fixed;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-h);
+      background: var(--bg-dark);
+      display: flex;
+      justify-content: space-around;
+      align-items: stretch;
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+    }
+    .nav-btn {
+      flex: 1;
+      background: none;
+      border: 0;
+      color: #8e8ea3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font: inherit;
+      gap: 2px;
+      transition: color 150ms;
+      padding: 6px 0;
+    }
+    .nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .nav-btn .label { font-size: 11px; opacity: 0; transition: opacity 150ms; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn.active .label { opacity: 1; font-size: 12px; }
+
+    /* COMMON */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+    }
+    .card h2 {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; align-items: center; gap: 8px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stack > * + * { margin-top: 10px; }
+
+    /* INPUTS */
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 150ms, box-shadow 150ms;
+      -webkit-appearance: none; appearance: none;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(233, 77, 107, 0.15);
+    }
+    input::placeholder { color: #b5b9c2; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 150ms, transform 80ms;
+      text-decoration: none;
+    }
+    .btn:hover { background: #d63d5b; }
+    .btn:active { transform: scale(0.98); }
+    .btn--block { width: 100%; }
+    .btn--outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .btn--outline:hover { background: var(--accent-soft); }
+    .btn--ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn--ghost:hover { background: var(--border); }
+    .btn--sm { padding: 8px 12px; font-size: 13px; }
+
+    /* PROGRESS CIRCLES */
+    .days-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .day-circle {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      color: var(--muted);
+      background: #fff;
+      transition: background 150ms, color 150ms, transform 150ms;
+    }
+    .day-circle.past { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .day-circle.today {
+      background: var(--bg-dark);
+      color: #fff;
+      border-color: var(--bg-dark);
+      box-shadow: 0 2px 8px rgba(26, 26, 46, 0.25);
+      transform: scale(1.05);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .progress-bar > div {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 8px;
+      transition: width 250ms ease;
+    }
+    .progress-info { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+    /* CHART */
+    .chart-wrap {
+      width: 100%;
+      height: 100px;
+      position: relative;
+    }
+    .chart-wrap svg { width: 100%; height: 100%; display: block; }
+    .chart-empty {
+      height: 100px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+
+    /* STAT CARDS */
+    .stat {
+      background: var(--page-bg);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat .value { font-size: 22px; font-weight: 700; color: var(--accent); }
+    .stat .value.success { color: var(--success); }
+    .stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* WEEK SWITCHER */
+    .week-switcher {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .week-switcher::-webkit-scrollbar { display: none; }
+    .week-pill {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 150ms;
+    }
+    .week-pill.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* MENU ACCORDION */
+    .day-accordion {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .day-accordion summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .day-accordion summary::-webkit-details-marker { display: none; }
+    .day-accordion summary .chev {
+      width: 14px; height: 14px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 200ms;
+    }
+    .day-accordion[open] summary .chev { transform: rotate(-135deg); }
+    .day-accordion[open] summary { border-bottom: 1px solid var(--border); }
+    .day-accordion .day-today-mark {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .meal {
+      display: grid;
+      grid-template-columns: 28px 70px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+    .meal + .meal { border-top: 1px solid var(--border); }
+    .meal .icon { font-size: 18px; }
+    .meal .meal-name { color: var(--muted); font-size: 13px; padding-top: 1px; }
+
+    /* SHOPPING */
+    .shopping-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .shop-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      transition: background 150ms;
+    }
+    .shop-item:last-child { border-bottom: 0; }
+    .shop-item input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .shop-item .text {
+      flex: 1;
+      transition: color 150ms;
+      word-break: break-word;
+    }
+    .shop-item.checked .text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .shop-item .del {
+      background: none; border: 0;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .shop-item .del:hover { color: var(--accent); }
+    .shop-add {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .shop-add input { flex: 1; }
+    .shop-add .btn { width: 44px; padding: 0; font-size: 22px; line-height: 1; flex-shrink: 0; }
+
+    /* TABLE */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
+    table.archive {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 480px;
+    }
+    table.archive th, table.archive td {
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    table.archive th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    table.archive td.day { font-weight: 600; color: var(--accent); }
+    table.archive td.today { background: rgba(233, 77, 107, 0.08); }
+    table.archive td.empty { color: #c7cbd1; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+      animation: fadeIn 200ms ease;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+    .modal h2 { margin: 0 0 8px 0; font-size: 20px; font-weight: 700; }
+    .modal p { margin: 0 0 16px 0; color: var(--muted); font-size: 14px; }
+    .modal input { margin-bottom: 16px; text-align: center; font-size: 16px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      left: 50%; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+      transform: translateX(-50%);
+      background: var(--bg-dark);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      z-index: 200;
+      animation: toastIn 200ms ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      max-width: 90%;
+      text-align: center;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* HINTS */
+    .form-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* PRINT-ONLY REPORT */
+    #print-report { display: none; }
+
+    @media print {
+      :root { --bg-dark: #000; }
+      body { background: #fff; }
+      #topBar, #bottomNav, .tab-content, .modal-overlay, .toast { display: none !important; }
+      #app { max-width: 100%; box-shadow: none; }
+      main#content { padding: 0; }
+      #print-report { display: block; padding: 24px; color: #000; }
+      #print-report h1 { font-size: 22px; margin: 0 0 4px 0; }
+      #print-report .subtitle { color: #555; margin-bottom: 16px; font-size: 14px; }
+      #print-report table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+      #print-report table th, #print-report table td {
+        border: 1px solid #ddd; padding: 6px 8px; text-align: center;
+      }
+      #print-report .totals { display: flex; gap: 24px; }
+      #print-report .totals div { font-size: 13px; }
+      #print-report .totals strong { font-size: 18px; display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header id="topBar">
+      <div class="title" id="appTitle">Марафон</div>
+      <div class="day-indicator" id="dayIndicator">—</div>
+    </header>
+
+    <main id="content">
+      <!-- TAB 1: MEASUREMENTS -->
+      <section class="tab-content" data-tab="measurements">
+        <div class="card">
+          <h2>Прогресс марафона</h2>
+          <div class="days-row" id="daysRow"></div>
+          <div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
+          <div class="progress-info">
+            <span id="progressText">День 0 из 0</span>
+            <span id="progressPercent">0%</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="todayTitle">Сегодня</h2>
+          <form id="todayForm" class="stack" autocomplete="off">
+            <div>
+              <label for="fWeight">Вес (кг)</label>
+              <input id="fWeight" type="number" step="0.1" inputmode="decimal" placeholder="72.5">
+            </div>
+            <div>
+              <label for="fSteps">Шаги</label>
+              <input id="fSteps" type="number" inputmode="numeric" placeholder="8000">
+            </div>
+            <div class="grid-2">
+              <div>
+                <label for="fWaist">Талия (см)</label>
+                <input id="fWaist" type="number" step="0.5" inputmode="decimal">
+              </div>
+              <div>
+                <label for="fHips">Бёдра (см)</label>
+                <input id="fHips" type="number" step="0.5" inputmode="decimal">
+              </div>
+            </div>
+            <div>
+              <label for="fChest">Грудь (см)</label>
+              <input id="fChest" type="number" step="0.5" inputmode="decimal">
+              <div class="form-hint">Талия / бёдра / грудь — желательно еженедельно</div>
+            </div>
+            <button type="submit" class="btn btn--block">Сохранить</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Динамика веса</h2>
+          <div id="chartWrap" class="chart-wrap"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="stat">
+            <div class="value" id="lostKg">—</div>
+            <div class="label">Ушло, кг</div>
+          </div>
+          <div class="stat">
+            <div class="value" id="lostCm">—</div>
+            <div class="label">Ушло, см</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: MENU -->
+      <section class="tab-content" data-tab="menu" hidden>
+        <div class="week-switcher" id="menuWeekSwitcher"></div>
+        <div id="menuList"></div>
+      </section>
+
+      <!-- TAB 3: SHOPPING -->
+      <section class="tab-content" data-tab="shopping" hidden>
+        <div class="card">
+          <div class="shopping-header">
+            <div class="muted" id="shopCounter">Куплено: 0 / 0</div>
+            <button class="btn btn--ghost btn--sm" id="shopReset">Сбросить</button>
+          </div>
+          <div id="shopList"></div>
+          <div class="shop-add">
+            <input id="shopInput" type="text" placeholder="Добавить продукт...">
+            <button class="btn" id="shopAddBtn" aria-label="Добавить">+</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: ARCHIVE -->
+      <section class="tab-content" data-tab="archive" hidden>
+        <div class="card">
+          <h2>История замеров</h2>
+          <div class="table-wrap">
+            <table class="archive" id="archiveTable">
+              <thead>
+                <tr>
+                  <th>День</th><th>Дата</th><th>Вес</th><th>Шаги</th>
+                  <th>Талия</th><th>Бёдра</th><th>Грудь</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="muted" id="archiveSummary" style="margin-top:12px"></div>
+        </div>
+
+        <div class="card">
+          <h2>Архив меню</h2>
+          <div class="week-switcher" id="archWeekSwitcher"></div>
+          <div id="archMenuList"></div>
+        </div>
+
+        <div class="card">
+          <h2>Список продуктов недели</h2>
+          <div id="archShopList"></div>
+        </div>
+
+        <div class="card">
+          <h2>Экспорт и резервная копия</h2>
+          <div class="grid-2" style="margin-bottom:10px">
+            <button class="btn btn--outline" id="btnPdf">Скачать PDF</button>
+            <button class="btn btn--outline" id="btnJson">Скачать JSON</button>
+          </div>
+          <button class="btn btn--ghost btn--block" id="btnImport">Импортировать JSON</button>
+          <input type="file" accept=".json,application/json" id="fileImport" hidden>
+          <button class="btn btn--ghost btn--block" id="btnNotify" style="margin-top:10px">Включить напоминания</button>
+        </div>
+      </section>
+    </main>
+
+    <nav id="bottomNav">
+      <button class="nav-btn active" data-tab="measurements" aria-label="Замеры">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="13" width="3" height="6"/><rect x="10.5" y="9" width="3" height="10"/><rect x="16" y="5" width="3" height="14"/></svg>
+        <span class="label">Замеры</span>
+      </button>
+      <button class="nav-btn" data-tab="menu" aria-label="Меню">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2-3-2V5a2 2 0 0 1 2-2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        <span class="label">Меню</span>
+      </button>
+      <button class="nav-btn" data-tab="shopping" aria-label="Список">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.95-1.55L21 7H6"/></svg>
+        <span class="label">Список</span>
+      </button>
+      <button class="nav-btn" data-tab="archive" aria-label="Архив">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><line x1="10" y1="13" x2="14" y2="13"/></svg>
+        <span class="label">Архив</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Onboarding modal -->
+  <div id="onboarding" class="modal-overlay" hidden>
+    <div class="modal">
+      <h2>Добро пожаловать!</h2>
+      <p>Введите имя — оно появится в отчёте марафона.</p>
+      <input id="onbName" type="text" placeholder="Ваше имя" maxlength="40">
+      <button class="btn btn--block" id="onbBtn">Начать</button>
+    </div>
+  </div>
+
+  <!-- Print-only report -->
+  <div id="print-report"></div>
+
+  <script>
+    // ===========================================================
+    // Fallback data — используется, если fetch не сработал
+    // (например, открытие через file:// без HTTP-сервера)
+    // ===========================================================
+    window.fallbackData = {
+      marathon: { title: "Марафон −10", total_days: 21, start_date: "2025-06-01" },
+      weeks: [
+        {
+          week: 1,
+          menu: {
+            "Понедельник": { breakfast: "Овсяная каша с ягодами", lunch: "Куриный суп, цельнозерновой хлеб", dinner: "Греческий салат с оливковым маслом" },
+            "Вторник":     { breakfast: "Яйца 2 шт, помидоры", lunch: "Гречка с куриным филе", dinner: "Творог 5%, фрукты" },
+            "Среда":       { breakfast: "Овсянка с бананом", lunch: "Рыба на пару, овощи", dinner: "Салат из свежих овощей" },
+            "Четверг":     { breakfast: "Омлет 2 яйца, зелень", lunch: "Куриный бульон с овощами", dinner: "Творог с ягодами" },
+            "Пятница":     { breakfast: "Гречневая каша", lunch: "Запечённая куриная грудка, огурцы", dinner: "Кефир 1%, яблоко" },
+            "Суббота":     { breakfast: "Яичница, тост цельнозерновой", lunch: "Суп-пюре из тыквы", dinner: "Греческий йогурт, орехи" },
+            "Воскресенье": { breakfast: "Блины из овсяной муки", lunch: "Паста из цельнозерновой муки, курица", dinner: "Лёгкий салат, кефир" }
+          },
+          shopping: ["Куриное филе 1 кг","Овсянка 500 г","Яйца 10 шт","Творог 5% 400 г","Гречка 500 г","Помидоры 500 г","Огурцы свежие 3 шт","Оливковое масло","Кефир 1% 1 л","Греческий йогурт 2 шт","Бананы 3 шт","Яблоки 4 шт"]
+        }
+      ]
+    };
+
+    // ===========================================================
+    // Константы и состояние
+    // ===========================================================
+    const DAYS_RU = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+    const MEAL_KEYS = [
+      { key: "breakfast", icon: "🌅", name: "Завтрак" },
+      { key: "lunch",     icon: "☀️", name: "Обед" },
+      { key: "dinner",    icon: "🌙", name: "Ужин" }
+    ];
+
+    const state = {
+      data: null,
+      tab: "measurements",
+      menuWeek: 1,
+      archiveWeek: 1
+    };
+
+    // ===========================================================
+    // Утилиты
+    // ===========================================================
+    const $  = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function isoDate(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+    function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+    function dayKey(d) { return "day_" + isoDate(d); }
+    function fmtShort(d) { return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1); }
+    function fmtTodayTitle(d) {
+      return "Сегодня, " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
+    }
+    function round1(x) { return Math.round(x * 10) / 10; }
+    function toast(msg) {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2400);
+    }
+
+    function getMarathonStart() {
+      return startOfDay(new Date(state.data.marathon.start_date));
+    }
+    function getCurrentDay() {
+      const start = getMarathonStart();
+      const today = startOfDay(new Date());
+      const diff = Math.floor((today - start) / 86400000) + 1;
+      return Math.max(1, Math.min(diff, state.data.marathon.total_days));
+    }
+    function getCurrentWeek() {
+      const start = getMarathonStart();
+      const today = startOfDay(new Date());
+      const daysPassed = Math.max(0, Math.floor((today - start) / 86400000));
+      const w = Math.floor(daysPassed / 7) + 1;
+      const totalWeeks = Math.max(1, state.data.weeks.length);
+      return Math.max(1, Math.min(w, totalWeeks));
+    }
+    function getWeekByNumber(n) {
+      return state.data.weeks.find(w => w.week === n) || null;
+    }
+    function getDayOfWeekRu(d) { return DAYS_RU[d.getDay()]; }
+
+    function getAllEntries() {
+      const out = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("day_")) {
+          try {
+            const v = JSON.parse(localStorage.getItem(k));
+            if (v && typeof v === "object") out.push(v);
+          } catch (e) {}
+        }
+      }
+      out.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      return out;
+    }
+
+    // ===========================================================
+    // Загрузка данных
+    // ===========================================================
+    async function loadData() {
+      try {
+        const res = await fetch("data.json?" + Date.now());
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        state.data = await res.json();
+      } catch (err) {
+        try {
+          const res2 = await fetch("data.json");
+          state.data = await res2.json();
+        } catch (e2) {
+          console.warn("fetch недоступен, используем fallbackData", e2);
+          state.data = window.fallbackData;
+        }
+      }
+      init();
+    }
+
+    // ===========================================================
+    // Инициализация
+    // ===========================================================
+    function init() {
+      state.menuWeek = getCurrentWeek();
+      state.archiveWeek = getCurrentWeek();
+
+      renderHeader();
+      bindNav();
+      bindOnboarding();
+      bindShoppingControls();
+      bindExportControls();
+      bindForm();
+      renderAll();
+      maybeOnboard();
+    }
+
+    function renderAll() {
+      renderMeasurementsTab();
+      renderMenuTab();
+      renderShoppingTab();
+      renderArchiveTab();
+    }
+
+    function renderHeader() {
+      $("#appTitle").textContent = state.data.marathon.title;
+      $("#dayIndicator").textContent =
+        "День " + getCurrentDay() + " из " + state.data.marathon.total_days;
+    }
+
+    // ===========================================================
+    // Навигация по вкладкам
+    // ===========================================================
+    function bindNav() {
+      $$(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => showTab(btn.dataset.tab));
+      });
+    }
+    function showTab(tab) {
+      state.tab = tab;
+      $$(".tab-content").forEach(s => {
+        s.hidden = (s.dataset.tab !== tab);
+      });
+      $$(".nav-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.tab === tab);
+      });
+      window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    }
+
+    // ===========================================================
+    // Онбординг
+    // ===========================================================
+    function maybeOnboard() {
+      if (!localStorage.getItem("user_name")) {
+        $("#onboarding").hidden = false;
+        setTimeout(() => $("#onbName").focus(), 100);
+      }
+    }
+    function bindOnboarding() {
+      const submit = () => {
+        const v = $("#onbName").value.trim();
+        if (!v) { $("#onbName").focus(); return; }
+        localStorage.setItem("user_name", v);
+        $("#onboarding").hidden = true;
+        toast("Удачи на марафоне, " + v + "!");
+      };
+      $("#onbBtn").addEventListener("click", submit);
+      $("#onbName").addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+    }
+
+    // ===========================================================
+    // ВКЛАДКА 1: Замеры
+    // ===========================================================
+    function renderMeasurementsTab() {
+      renderDaysRow();
+      renderProgressBar();
+      renderTodayForm();
+      renderWeightChart();
+      renderTotals();
+    }
+
+    function renderDaysRow() {
+      const total = state.data.marathon.total_days;
+      const cur = getCurrentDay();
+      const row = $("#daysRow");
+      row.innerHTML = "";
+      for (let i = 1; i <= total; i++) {
+        const el = document.createElement("div");
+        el.className = "day-circle";
+        if (i < cur) el.classList.add("past");
+        else if (i === cur) el.classList.add("today");
+        el.textContent = i;
+        row.appendChild(el);
+      }
+    }
+    function renderProgressBar() {
+      const total = state.data.marathon.total_days;
+      const cur = getCurrentDay();
+      const pct = Math.round((cur / total) * 100);
+      $("#progressFill").style.width = pct + "%";
+      $("#progressText").textContent = "День " + cur + " из " + total;
+      $("#progressPercent").textContent = pct + "%";
+    }
+
+    function renderTodayForm() {
+      const today = new Date();
+      $("#todayTitle").textContent = fmtTodayTitle(today);
+      const key = dayKey(today);
+      const saved = localStorage.getItem(key);
+      const data = saved ? JSON.parse(saved) : {};
+      $("#fWeight").value = data.weight ?? "";
+      $("#fSteps").value  = data.steps  ?? "";
+      $("#fWaist").value  = data.waist  ?? "";
+      $("#fHips").value   = data.hips   ?? "";
+      $("#fChest").value  = data.chest  ?? "";
+    }
+
+    function bindForm() {
+      $("#todayForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const today = new Date();
+        const entry = {
+          date: isoDate(today),
+          weight: parseFloatOrNull($("#fWeight").value),
+          steps:  parseIntOrNull($("#fSteps").value),
+          waist:  parseFloatOrNull($("#fWaist").value),
+          hips:   parseFloatOrNull($("#fHips").value),
+          chest:  parseFloatOrNull($("#fChest").value)
+        };
+        localStorage.setItem(dayKey(today), JSON.stringify(entry));
+        toast("Сохранено");
+        renderMeasurementsTab();
+        renderArchiveTab();
+      });
+    }
+    function parseFloatOrNull(v) { const n = parseFloat(v); return isFinite(n) ? n : null; }
+    function parseIntOrNull(v) { const n = parseInt(v, 10); return isFinite(n) ? n : null; }
+
+    function renderWeightChart() {
+      const wrap = $("#chartWrap");
+      wrap.innerHTML = "";
+      const entries = getAllEntries().filter(e => typeof e.weight === "number");
+      if (entries.length < 2) {
+        const empty = document.createElement("div");
+        empty.className = "chart-empty";
+        empty.textContent = entries.length === 0
+          ? "Введите вес минимум за 2 дня"
+          : "Нужно ещё хотя бы одно значение веса";
+        wrap.appendChild(empty);
+        return;
+      }
+      const W = 300, H = 100, padX = 12, padY = 14;
+      const xs = entries.map((_, i) => padX + i * (W - 2 * padX) / (entries.length - 1));
+      const ys_raw = entries.map(e => e.weight);
+      let min = Math.min(...ys_raw), max = Math.max(...ys_raw);
+      if (min === max) { min -= 1; max += 1; }
+      const ys = ys_raw.map(v => H - padY - (v - min) / (max - min) * (H - 2 * padY));
+      const pts = xs.map((x, i) => x.toFixed(1) + "," + ys[i].toFixed(1)).join(" ");
+      const last = entries.length - 1;
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      svg.setAttribute("preserveAspectRatio", "none");
+      // baseline
+      const base = document.createElementNS(svgNS, "line");
+      base.setAttribute("x1", 0); base.setAttribute("x2", W);
+      base.setAttribute("y1", H - padY); base.setAttribute("y2", H - padY);
+      base.setAttribute("stroke", "#e9ecef"); base.setAttribute("stroke-width", "1");
+      svg.appendChild(base);
+      // area fill
+      const area = document.createElementNS(svgNS, "polygon");
+      area.setAttribute("points",
+        xs[0] + "," + (H - padY) + " " + pts + " " + xs[xs.length - 1] + "," + (H - padY));
+      area.setAttribute("fill", "rgba(233, 77, 107, 0.12)");
+      svg.appendChild(area);
+      // line
+      const poly = document.createElementNS(svgNS, "polyline");
+      poly.setAttribute("points", pts);
+      poly.setAttribute("fill", "none");
+      poly.setAttribute("stroke", "#e94d6b");
+      poly.setAttribute("stroke-width", "2");
+      poly.setAttribute("stroke-linejoin", "round");
+      poly.setAttribute("stroke-linecap", "round");
+      svg.appendChild(poly);
+      // dots
+      xs.forEach((x, i) => {
+        const c = document.createElementNS(svgNS, "circle");
+        c.setAttribute("cx", x); c.setAttribute("cy", ys[i]);
+        c.setAttribute("r", i === last ? 4 : 2.5);
+        c.setAttribute("fill", "#fff");
+        c.setAttribute("stroke", "#e94d6b");
+        c.setAttribute("stroke-width", "2");
+        svg.appendChild(c);
+      });
+      // last value label
+      const t = document.createElementNS(svgNS, "text");
+      t.setAttribute("x", xs[last] - 4);
+      t.setAttribute("y", Math.max(12, ys[last] - 8));
+      t.setAttribute("font-size", "11");
+      t.setAttribute("text-anchor", "end");
+      t.setAttribute("fill", "#1a1a2e");
+      t.setAttribute("font-weight", "600");
+      t.textContent = round1(ys_raw[last]) + " кг";
+      svg.appendChild(t);
+      wrap.appendChild(svg);
+    }
+
+    function renderTotals() {
+      const entries = getAllEntries();
+      const weights = entries.filter(e => typeof e.weight === "number");
+      let lostKg = "—", lostKgClass = "";
+      if (weights.length >= 2) {
+        const diff = round1(weights[0].weight - weights[weights.length - 1].weight);
+        lostKg = (diff > 0 ? "−" : (diff < 0 ? "+" : "")) + Math.abs(diff).toFixed(1);
+        lostKgClass = diff > 0 ? "success" : "";
+      }
+      const $kg = $("#lostKg");
+      $kg.textContent = lostKg;
+      $kg.classList.toggle("success", !!lostKgClass);
+
+      const cmFields = ["waist", "hips", "chest"];
+      let totalCm = 0, hasAny = false;
+      cmFields.forEach(f => {
+        const vals = entries.map(e => e[f]).filter(v => typeof v === "number");
+        if (vals.length >= 2) {
+          totalCm += (vals[0] - vals[vals.length - 1]);
+          hasAny = true;
+        }
+      });
+      const $cm = $("#lostCm");
+      if (hasAny) {
+        const sign = totalCm > 0 ? "−" : (totalCm < 0 ? "+" : "");
+        $cm.textContent = sign + Math.abs(round1(totalCm));
+        $cm.classList.toggle("success", totalCm > 0);
+      } else {
+        $cm.textContent = "—";
+        $cm.classList.remove("success");
+      }
+    }
+
+    // ===========================================================
+    // ВКЛАДКА 2: Меню
+    // ===========================================================
+    function renderMenuTab() {
+      renderWeekSwitcher($("#menuWeekSwitcher"), state.menuWeek, n => {
+        state.menuWeek = n; renderMenuTab();
+      });
+      const list = $("#menuList");
+      list.innerHTML = "";
+      const w = getWeekByNumber(state.menuWeek);
+      if (!w || !w.menu || Object.keys(w.menu).length === 0) {
+        const c = document.createElement("div");
+        c.className = "card";
+        c.innerHTML = '<div class="muted">Меню на эту неделю ещё не добавлено</div>';
+        list.appendChild(c);
+        return;
+      }
+      const todayDow = getDayOfWeekRu(new Date());
+      const isThisWeek = (state.menuWeek === getCurrentWeek());
+      Object.entries(w.menu).forEach(([day, meals]) => {
+        const det = document.createElement("details");
+        det.className = "day-accordion";
+        if (isThisWeek && day === todayDow) det.open = true;
+        const sum = document.createElement("summary");
+        sum.innerHTML = '<span>' + day +
+          (isThisWeek && day === todayDow ? '<span class="day-today-mark">сегодня</span>' : '') +
+          '</span><span class="chev"></span>';
+        det.appendChild(sum);
+        MEAL_KEYS.forEach(m => {
+          const row = document.createElement("div");
+          row.className = "meal";
+          row.innerHTML =
+            '<div class="icon">' + m.icon + '</div>' +
+            '<div class="meal-name">' + m.name + '</div>' +
+            '<div>' + (meals[m.key] || '—') + '</div>';
+          det.appendChild(row);
+        });
+        list.appendChild(det);
+      });
+    }
+
+    function renderWeekSwitcher(container, active, onChange) {
+      container.innerHTML = "";
+      state.data.weeks.forEach(w => {
+        const btn = document.createElement("button");
+        btn.className = "week-pill" + (w.week === active ? " active" : "");
+        btn.textContent = "Нед. " + w.week;
+        btn.addEventListener("click", () => onChange(w.week));
+        container.appendChild(btn);
+      });
+    }
+
+    // ===========================================================
+    // ВКЛАДКА 3: Список продуктов
+    // ===========================================================
+    function getShoppingState(weekNum) {
+      const w = getWeekByNumber(weekNum);
+      const base = (w && Array.isArray(w.shopping)) ? w.shopping : [];
+      let extras = [];
+      try { extras = JSON.parse(localStorage.getItem("shopping_extra_week_" + weekNum) || "[]"); } catch (e) {}
+      if (!Array.isArray(extras)) extras = [];
+      let checked = [];
+      try { checked = JSON.parse(localStorage.getItem("shopping_checked_week_" + weekNum) || "[]"); } catch (e) {}
+      if (!Array.isArray(checked)) checked = [];
+      return { base, extras, checked, total: base.length + extras.length };
+    }
+    function saveShopping(weekNum, extras, checked) {
+      localStorage.setItem("shopping_extra_week_" + weekNum, JSON.stringify(extras));
+      localStorage.setItem("shopping_checked_week_" + weekNum, JSON.stringify(checked));
+    }
+
+    function renderShoppingTab() {
+      const weekNum = getCurrentWeek();
+      const st = getShoppingState(weekNum);
+      const all = [...st.base.map(t => ({ text: t, extra: false })),
+                   ...st.extras.map(t => ({ text: t, extra: true }))];
+      const list = $("#shopList");
+      list.innerHTML = "";
+      const counter = $("#shopCounter");
+      const checkedCount = st.checked.filter(i => i < all.length).length;
+      counter.textContent = "Куплено: " + checkedCount + " / " + all.length +
+        " · неделя " + weekNum;
+
+      if (all.length === 0) {
+        list.innerHTML = '<div class="muted" style="padding:12px 0">Список пуст. Добавьте продукты ниже.</div>';
+        return;
+      }
+
+      all.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = "shop-item" + (st.checked.includes(idx) ? " checked" : "");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = st.checked.includes(idx);
+        cb.addEventListener("change", () => {
+          let checked = st.checked.slice();
+          if (cb.checked) {
+            if (!checked.includes(idx)) checked.push(idx);
+          } else {
+            checked = checked.filter(i => i !== idx);
+          }
+          saveShopping(weekNum, st.extras, checked);
+          renderShoppingTab();
+        });
+        const txt = document.createElement("span");
+        txt.className = "text";
+        txt.textContent = item.text;
+        row.appendChild(cb);
+        row.appendChild(txt);
+        if (item.extra) {
+          const del = document.createElement("button");
+          del.className = "del";
+          del.title = "Удалить";
+          del.textContent = "×";
+          del.addEventListener("click", () => {
+            const extraIdx = idx - st.base.length;
+            const extras = st.extras.slice();
+            extras.splice(extraIdx, 1);
+            const checked = st.checked
+              .filter(i => i !== idx)
+              .map(i => (i > idx ? i - 1 : i));
+            saveShopping(weekNum, extras, checked);
+            renderShoppingTab();
+          });
+          row.appendChild(del);
+        }
+        list.appendChild(row);
+      });
+    }
+
+    function bindShoppingControls() {
+      const addItem = () => {
+        const inp = $("#shopInput");
+        const v = inp.value.trim();
+        if (!v) return;
+        const weekNum = getCurrentWeek();
+        const st = getShoppingState(weekNum);
+        const extras = [...st.extras, v];
+        saveShopping(weekNum, extras, st.checked);
+        inp.value = "";
+        renderShoppingTab();
+      };
+      $("#shopAddBtn").addEventListener("click", addItem);
+      $("#shopInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); addItem(); }
+      });
+      $("#shopReset").addEventListener("click", () => {
+        const weekNum = getCurrentWeek();
+        const st = getShoppingState(weekNum);
+        saveShopping(weekNum, st.extras, []);
+        renderShoppingTab();
+        toast("Отметки сброшены");
+      });
+    }
+
+    // ===========================================================
+    // ВКЛАДКА 4: Архив
+    // ===========================================================
+    function renderArchiveTab() {
+      renderArchiveTable();
+      renderWeekSwitcher($("#archWeekSwitcher"), state.archiveWeek, n => {
+        state.archiveWeek = n; renderArchiveTab();
+      });
+      renderArchiveMenu();
+      renderArchiveShopping();
+    }
+
+    function renderArchiveTable() {
+      const tbody = $("#archiveTable tbody");
+      tbody.innerHTML = "";
+      const total = state.data.marathon.total_days;
+      const start = getMarathonStart();
+      const todayIso = isoDate(new Date());
+
+      let firstWeight = null, lastWeight = null;
+      let firstWaist  = null, lastWaist  = null;
+
+      for (let i = 1; i <= total; i++) {
+        const d = new Date(start.getTime() + (i - 1) * 86400000);
+        const iso = isoDate(d);
+        const raw = localStorage.getItem("day_" + iso);
+        const e = raw ? JSON.parse(raw) : null;
+        const tr = document.createElement("tr");
+        const cells = [
+          { v: i, cls: "day" },
+          { v: fmtShort(d) },
+          { v: e && e.weight != null ? round1(e.weight) : null },
+          { v: e && e.steps  != null ? e.steps.toLocaleString("ru-RU") : null },
+          { v: e && e.waist  != null ? round1(e.waist) : null },
+          { v: e && e.hips   != null ? round1(e.hips)  : null },
+          { v: e && e.chest  != null ? round1(e.chest) : null }
+        ];
+        const isToday = (iso === todayIso);
+        cells.forEach(c => {
+          const td = document.createElement("td");
+          if (c.v == null) { td.textContent = "—"; td.classList.add("empty"); }
+          else td.textContent = c.v;
+          if (c.cls) td.classList.add(c.cls);
+          if (isToday) td.classList.add("today");
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+
+        if (e && e.weight != null) {
+          if (firstWeight == null) firstWeight = e.weight;
+          lastWeight = e.weight;
+        }
+        if (e && e.waist != null) {
+          if (firstWaist == null) firstWaist = e.waist;
+          lastWaist = e.waist;
+        }
+      }
+
+      const parts = [];
+      if (firstWeight != null && lastWeight != null && firstWeight !== lastWeight) {
+        const diff = round1(firstWeight - lastWeight);
+        parts.push((diff > 0 ? "−" : "+") + Math.abs(diff).toFixed(1) + " кг");
+      }
+      if (firstWaist != null && lastWaist != null && firstWaist !== lastWaist) {
+        const diff = round1(firstWaist - lastWaist);
+        parts.push((diff > 0 ? "−" : "+") + Math.abs(diff).toFixed(1) + " см талия");
+      }
+      $("#archiveSummary").textContent =
+        parts.length ? "За марафон: " + parts.join(", ") : "Накапливайте записи — итоги появятся здесь.";
+    }
+
+    function renderArchiveMenu() {
+      const list = $("#archMenuList");
+      list.innerHTML = "";
+      const w = getWeekByNumber(state.archiveWeek);
+      if (!w || !w.menu) {
+        list.innerHTML = '<div class="muted">Меню на эту неделю отсутствует</div>';
+        return;
+      }
+      Object.entries(w.menu).forEach(([day, meals]) => {
+        const det = document.createElement("details");
+        det.className = "day-accordion";
+        const sum = document.createElement("summary");
+        sum.innerHTML = '<span>' + day + '</span><span class="chev"></span>';
+        det.appendChild(sum);
+        MEAL_KEYS.forEach(m => {
+          const row = document.createElement("div");
+          row.className = "meal";
+          row.innerHTML =
+            '<div class="icon">' + m.icon + '</div>' +
+            '<div class="meal-name">' + m.name + '</div>' +
+            '<div>' + (meals[m.key] || '—') + '</div>';
+          det.appendChild(row);
+        });
+        list.appendChild(det);
+      });
+    }
+
+    function renderArchiveShopping() {
+      const st = getShoppingState(state.archiveWeek);
+      const all = [...st.base.map(t => ({ text: t, extra: false })),
+                   ...st.extras.map(t => ({ text: t, extra: true }))];
+      const list = $("#archShopList");
+      list.innerHTML = "";
+      if (all.length === 0) {
+        list.innerHTML = '<div class="muted">Список на эту неделю пуст</div>';
+        return;
+      }
+      all.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = "shop-item" + (st.checked.includes(idx) ? " checked" : "");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = st.checked.includes(idx);
+        cb.disabled = true;
+        const txt = document.createElement("span");
+        txt.className = "text";
+        txt.textContent = item.text + (item.extra ? "  ·  доп." : "");
+        row.appendChild(cb);
+        row.appendChild(txt);
+        list.appendChild(row);
+      });
+    }
+
+    // ===========================================================
+    // Экспорт / импорт / печать / уведомления
+    // ===========================================================
+    function buildPrintReport() {
+      const r = $("#print-report");
+      const name = localStorage.getItem("user_name") || "Участник";
+      const start = getMarathonStart();
+      const total = state.data.marathon.total_days;
+      const end = new Date(start.getTime() + (total - 1) * 86400000);
+      const entries = [];
+      let firstW = null, lastW = null;
+      let firstWa = null, lastWa = null;
+
+      let rows = "";
+      for (let i = 1; i <= total; i++) {
+        const d = new Date(start.getTime() + (i - 1) * 86400000);
+        const raw = localStorage.getItem("day_" + isoDate(d));
+        const e = raw ? JSON.parse(raw) : null;
+        const c = v => (v == null ? "—" : v);
+        if (e) {
+          if (e.weight != null) { if (firstW == null) firstW = e.weight; lastW = e.weight; }
+          if (e.waist  != null) { if (firstWa == null) firstWa = e.waist; lastWa = e.waist; }
+        }
+        rows += "<tr>" +
+          "<td>" + i + "</td>" +
+          "<td>" + fmtShort(d) + "</td>" +
+          "<td>" + (e && e.weight != null ? round1(e.weight) : "—") + "</td>" +
+          "<td>" + (e && e.steps  != null ? e.steps : "—") + "</td>" +
+          "<td>" + (e && e.waist  != null ? round1(e.waist) : "—") + "</td>" +
+          "<td>" + (e && e.hips   != null ? round1(e.hips)  : "—") + "</td>" +
+          "<td>" + (e && e.chest  != null ? round1(e.chest) : "—") + "</td>" +
+          "</tr>";
+      }
+      const lostKg = (firstW != null && lastW != null) ? round1(firstW - lastW) : null;
+      const lostCm = (firstWa != null && lastWa != null) ? round1(firstWa - lastWa) : null;
+
+      r.innerHTML =
+        '<h1>' + state.data.marathon.title + '</h1>' +
+        '<div class="subtitle">Участник: <b>' + name + '</b> · ' +
+        fmtShort(start) + ' — ' + fmtShort(end) + '</div>' +
+        '<table><thead><tr>' +
+          '<th>День</th><th>Дата</th><th>Вес</th><th>Шаги</th>' +
+          '<th>Талия</th><th>Бёдра</th><th>Грудь</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div class="totals">' +
+          '<div>Сброшено веса <strong>' + (lostKg != null ? (lostKg > 0 ? "−" : "+") + Math.abs(lostKg).toFixed(1) + " кг" : "—") + '</strong></div>' +
+          '<div>Талия <strong>' + (lostCm != null ? (lostCm > 0 ? "−" : "+") + Math.abs(lostCm).toFixed(1) + " см" : "—") + '</strong></div>' +
+        '</div>';
+    }
+
+    function bindExportControls() {
+      $("#btnPdf").addEventListener("click", () => {
+        buildPrintReport();
+        window.print();
+      });
+      $("#btnJson").addEventListener("click", exportJSON);
+      $("#btnImport").addEventListener("click", () => $("#fileImport").click());
+      $("#fileImport").addEventListener("change", importJSON);
+      $("#btnNotify").addEventListener("click", askNotify);
+    }
+
+    function exportJSON() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        data[k] = localStorage.getItem(k);
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "marathon-backup-" + isoDate(new Date()) + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      toast("Бэкап создан");
+    }
+
+    function importJSON(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(reader.result);
+          if (!obj || typeof obj !== "object") throw new Error("bad");
+          if (!confirm("Импорт перезапишет текущие данные. Продолжить?")) return;
+          Object.entries(obj).forEach(([k, v]) => {
+            if (typeof v === "string") localStorage.setItem(k, v);
+          });
+          toast("Данные восстановлены");
+          setTimeout(() => location.reload(), 800);
+        } catch (err) {
+          alert("Не удалось импортировать: файл повреждён.");
+        } finally {
+          e.target.value = "";
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function askNotify() {
+      if (!("Notification" in window)) {
+        toast("Уведомления не поддерживаются");
+        return;
+      }
+      Notification.requestPermission().then(p => {
+        if (p === "granted") {
+          toast("Напоминания включены");
+          maybeNotify();
+        } else {
+          toast("Разрешение не получено");
+        }
+      });
+    }
+    function maybeNotify() {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const today = isoDate(new Date());
+      const flag = "notified_" + today;
+      const todayEntry = localStorage.getItem(dayKey(new Date()));
+      const entry = todayEntry ? JSON.parse(todayEntry) : null;
+      const hasWeight = entry && entry.weight != null;
+      const h = new Date().getHours();
+      if (!hasWeight && (h >= 21 || h === 9) && !sessionStorage.getItem(flag)) {
+        try {
+          new Notification("Марафон −10", { body: "Внесите данные за сегодня в дневник", icon: "icons/icon-192.png" });
+          sessionStorage.setItem(flag, "1");
+        } catch (e) {}
+      }
+    }
+
+    // ===========================================================
+    // Service Worker
+    // ===========================================================
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(err => {
+          console.warn("SW registration failed:", err);
+        });
+      });
+    }
+
+    // ===========================================================
+    // Старт
+    // ===========================================================
+    loadData();
+  </script>
+</body>
+</html>
