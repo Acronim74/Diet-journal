@@ -554,6 +554,17 @@
       line-height: 1;
     }
     .coach-meal .cm-del:hover { color: var(--accent); }
+    .order-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      font-size: 11px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 6px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
 
     /* TABLE */
     .table-wrap {
@@ -842,6 +853,15 @@
             </div>
 
             <div>
+              <label for="cOrder">Порядок в дне</label>
+              <input id="cOrder" type="number" min="1" step="1" placeholder="по умолчанию 30">
+              <div class="form-hint">
+                Меньше число — раньше в дне. Чтобы поставить <b>перекус до обеда</b>, укажи, например, <b>15</b>.
+                Если оставить пустым, используется значение по умолчанию: завтрак&nbsp;10, обед&nbsp;20, перекус&nbsp;30, ужин&nbsp;40.
+              </div>
+            </div>
+
+            <div>
               <label>Ингредиенты</label>
               <div id="cIngList" class="ing-list"></div>
               <div class="ing-add">
@@ -990,11 +1010,34 @@
     // ===========================================================
     const DAYS_RU = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
     const MEAL_KEYS = [
-      { key: "breakfast", icon: "🌅", name: "Завтрак" },
-      { key: "lunch",     icon: "☀️", name: "Обед" },
-      { key: "snack",     icon: "🍎", name: "Перекус" },
-      { key: "dinner",    icon: "🌙", name: "Ужин" }
+      { key: "breakfast", icon: "🌅", name: "Завтрак", default_order: 10 },
+      { key: "lunch",     icon: "☀️", name: "Обед",    default_order: 20 },
+      { key: "snack",     icon: "🍎", name: "Перекус", default_order: 30 },
+      { key: "dinner",    icon: "🌙", name: "Ужин",    default_order: 40 }
     ];
+    const MEAL_DEF = Object.fromEntries(MEAL_KEYS.map(m => [m.key, m]));
+
+    // Эффективный «порядок в дне» для одного блюда:
+    // берётся meal.order, если задан; иначе — default_order по типу приёма пищи.
+    function mealOrder(key, meal) {
+      if (meal && typeof meal === "object" && typeof meal.order === "number" && isFinite(meal.order)) {
+        return meal.order;
+      }
+      return (MEAL_DEF[key] && MEAL_DEF[key].default_order) || 1000;
+    }
+
+    // Возвращает блюда одного дня в порядке подачи.
+    function sortedMealsOfDay(meals) {
+      const arr = [];
+      Object.keys(meals || {}).forEach(key => {
+        const def = MEAL_DEF[key];
+        if (!def) return;
+        arr.push({ key, meal: meals[key], def, order: mealOrder(key, meals[key]) });
+      });
+      arr.sort((a, b) => (a.order - b.order) ||
+        (MEAL_KEYS.indexOf(a.def) - MEAL_KEYS.indexOf(b.def)));
+      return arr;
+    }
 
     const COACH_CODE = "2026";
 
@@ -1528,8 +1571,8 @@
           '</span><span class="chev"></span>';
         det.appendChild(sum);
 
-        MEAL_KEYS.forEach(m => {
-          if (meals[m.key]) det.appendChild(renderMeal(meals[m.key], m));
+        sortedMealsOfDay(meals).forEach(({ meal, def }) => {
+          det.appendChild(renderMeal(meal, def));
         });
         container.appendChild(det);
       }
@@ -2051,7 +2094,11 @@
     function bindCoachForm() {
       const f = $("#coachForm");
       $("#cDate").addEventListener("change", updateCoachDateInfo);
-      $("#cMeal").addEventListener("change", updateCoachDateInfo);
+      $("#cMeal").addEventListener("change", () => {
+        updateCoachDateInfo();
+        updateOrderPlaceholder();
+      });
+      updateOrderPlaceholder();
 
       $("#cIngAddBtn").addEventListener("click", coachAddIngredient);
       const onIngEnter = e => {
@@ -2075,6 +2122,8 @@
         const kbju = $("#cKbju").value.trim();
         const calRaw = $("#cCalories").value.trim();
         const calories = calRaw === "" ? null : parseInt(calRaw, 10);
+        const orderRaw = $("#cOrder").value.trim();
+        const orderNum = orderRaw === "" ? null : parseInt(orderRaw, 10);
 
         const obj = { title };
         if (coachForm.ingredients.length > 0) {
@@ -2083,6 +2132,10 @@
         if (recipe) obj.recipe = recipe;
         if (kbju) obj.kbju = kbju;
         if (calories != null && isFinite(calories)) obj.calories = calories;
+        // Записываем order только если задан И отличается от дефолта типа приёма пищи
+        if (orderNum != null && isFinite(orderNum) && orderNum !== MEAL_DEF[meal].default_order) {
+          obj.order = orderNum;
+        }
 
         // Если редактировали другое (date, meal) — старую запись удаляем
         if (coachForm.editing &&
@@ -2279,6 +2332,12 @@
       return decodeURIComponent(escape(atob(b64)));
     }
 
+    function updateOrderPlaceholder() {
+      const mk = $("#cMeal").value;
+      const def = MEAL_DEF[mk];
+      if (def) $("#cOrder").placeholder = "по умолчанию " + def.default_order;
+    }
+
     function updateCoachDateInfo() {
       const v = $("#cDate").value;
       if (!v) { $("#cDateInfo").textContent = "—"; return; }
@@ -2341,8 +2400,10 @@
       $("#cRecipe").value = "";
       $("#cKbju").value = "";
       $("#cCalories").value = "";
+      $("#cOrder").value = "";
       $("#cIngName").value = "";
       $("#cIngWeight").value = "";
+      updateOrderPlaceholder();
       renderCoachIngList();
     }
 
@@ -2353,9 +2414,11 @@
       $("#cRecipe").value = meal.recipe || "";
       $("#cKbju").value = meal.kbju || "";
       $("#cCalories").value = meal.calories != null ? meal.calories : "";
+      $("#cOrder").value = (typeof meal.order === "number") ? meal.order : "";
       coachForm.ingredients = Array.isArray(meal.ingredients) ? meal.ingredients.slice() : [];
       coachForm.editing = { date: dateIso, meal: mealKey };
       updateCoachDateInfo();
+      updateOrderPlaceholder();
       renderCoachIngList();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -2366,9 +2429,9 @@
       const all = getCoachOverrides();
       const entries = [];
       Object.keys(all).sort().forEach(date => {
-        const day = all[date];
-        MEAL_KEYS.forEach(m => {
-          if (day && day[m.key]) entries.push({ date, mealKey: m.key, meal: day[m.key], def: m });
+        const day = all[date] || {};
+        sortedMealsOfDay(day).forEach(({ key, meal, def, order }) => {
+          entries.push({ date, mealKey: key, meal, def, order });
         });
       });
 
@@ -2381,18 +2444,20 @@
         return;
       }
 
-      entries.forEach(({ date, mealKey, meal, def }) => {
+      entries.forEach(({ date, mealKey, meal, def, order }) => {
         const row = document.createElement("div");
         row.className = "coach-meal";
         const isObj = meal && typeof meal === "object";
         const title = (isObj ? meal.title : meal) || "—";
         const d = new Date(date + "T00:00:00");
+        const isCustomOrder = isObj && typeof meal.order === "number" && meal.order !== def.default_order;
+        const orderMark = isCustomOrder ? '<span class="order-badge">#' + order + '</span>' : '';
         const sub = pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + " · " +
                     getDayOfWeekRu(d) + " · " + def.icon + " " + def.name;
         const main = document.createElement("div");
         main.className = "cm-main";
         main.innerHTML =
-          '<div class="cm-title">' + escHTML(title) + '</div>' +
+          '<div class="cm-title">' + escHTML(title) + orderMark + '</div>' +
           '<div class="cm-sub">' + escHTML(sub) + '</div>';
         row.appendChild(main);
 

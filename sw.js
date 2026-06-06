@@ -1,4 +1,4 @@
-const CACHE = 'marathon-v6';
+const CACHE = 'marathon-v7';
 const ASSETS = [
   './',
   './index.html',
