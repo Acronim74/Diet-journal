@@ -326,17 +326,84 @@
       color: var(--accent);
       font-weight: 500;
     }
-    .meal {
+    .meal, .meal-accordion summary {
       display: grid;
       grid-template-columns: 28px 70px 1fr;
       gap: 8px;
-      align-items: start;
-      padding: 10px 16px;
+      align-items: center;
+      padding: 12px 16px;
       font-size: 14px;
     }
-    .meal + .meal { border-top: 1px solid var(--border); }
-    .meal .icon { font-size: 18px; }
-    .meal .meal-name { color: var(--muted); font-size: 13px; padding-top: 1px; }
+    .meal + .meal,
+    .meal-accordion + .meal-accordion,
+    .meal-accordion + .meal,
+    .meal + .meal-accordion { border-top: 1px solid var(--border); }
+    .meal .icon, .meal-accordion .icon { font-size: 18px; line-height: 1; }
+    .meal .meal-name, .meal-accordion .meal-name { color: var(--muted); font-size: 13px; }
+
+    .meal-accordion summary {
+      list-style: none;
+      cursor: pointer;
+      grid-template-columns: 28px 70px 1fr 14px;
+      transition: background 150ms;
+    }
+    .meal-accordion summary::-webkit-details-marker { display: none; }
+    .meal-accordion summary:hover { background: var(--page-bg); }
+    .meal-accordion summary .meal-title { font-weight: 500; }
+    .meal-accordion summary .chev-sm {
+      width: 8px; height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 200ms;
+      justify-self: end;
+      margin-right: 4px;
+    }
+    .meal-accordion[open] summary .chev-sm { transform: rotate(-135deg); }
+    .meal-accordion[open] summary { background: var(--page-bg); }
+
+    .meal-details {
+      padding: 14px 16px 16px;
+      background: var(--page-bg);
+      font-size: 14px;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+    }
+    .meal-details h4 {
+      margin: 14px 0 6px 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .meal-details h4:first-child { margin-top: 0; }
+    .meal-details ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .meal-details ul li {
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .meal-details ul li:last-child { border-bottom: 0; }
+    .meal-details p {
+      margin: 0 0 4px 0;
+      line-height: 1.5;
+    }
+    .meal-details .kbju {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--bg-dark);
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: inline-block;
+      font-variant-numeric: tabular-nums;
+    }
+    .meal-details .kbju strong { color: var(--accent); margin-left: 4px; }
 
     /* SHOPPING */
     .shopping-header {
@@ -731,7 +798,27 @@
     }
 
     function getMarathonStart() {
+      const personal = localStorage.getItem("marathon_start");
+      if (personal) {
+        const d = new Date(personal);
+        if (!isNaN(d)) return startOfDay(d);
+      }
       return startOfDay(new Date(state.data.marathon.start_date));
+    }
+
+    function ensureMarathonStart() {
+      if (localStorage.getItem("marathon_start")) return;
+      const entries = getAllEntries();
+      if (entries.length > 0 && entries[0].date) {
+        localStorage.setItem("marathon_start", entries[0].date);
+      } else {
+        localStorage.setItem("marathon_start", isoDate(new Date()));
+      }
+    }
+
+    function escHTML(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g,
+        c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
     }
     function getCurrentDay() {
       const start = getMarathonStart();
@@ -791,6 +878,7 @@
     // Инициализация
     // ===========================================================
     function init() {
+      ensureMarathonStart();
       state.menuWeek = getCurrentWeek();
       state.archiveWeek = getCurrentWeek();
 
@@ -1056,21 +1144,65 @@
         det.className = "day-accordion";
         if (isThisWeek && day === todayDow) det.open = true;
         const sum = document.createElement("summary");
-        sum.innerHTML = '<span>' + day +
+        sum.innerHTML = '<span>' + escHTML(day) +
           (isThisWeek && day === todayDow ? '<span class="day-today-mark">сегодня</span>' : '') +
           '</span><span class="chev"></span>';
         det.appendChild(sum);
-        MEAL_KEYS.forEach(m => {
-          const row = document.createElement("div");
-          row.className = "meal";
-          row.innerHTML =
-            '<div class="icon">' + m.icon + '</div>' +
-            '<div class="meal-name">' + m.name + '</div>' +
-            '<div>' + (meals[m.key] || '—') + '</div>';
-          det.appendChild(row);
-        });
+        MEAL_KEYS.forEach(m => det.appendChild(renderMeal(meals[m.key], m)));
         list.appendChild(det);
       });
+    }
+
+    function renderMeal(meal, def) {
+      const isObj = meal && typeof meal === "object" && !Array.isArray(meal);
+      const title = isObj ? (meal.title || "—") : (meal || "—");
+      const hasDetails = isObj && (
+        (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) ||
+        (typeof meal.recipe === "string" && meal.recipe.trim()) ||
+        meal.kbju || meal.calories != null
+      );
+
+      if (!hasDetails) {
+        const row = document.createElement("div");
+        row.className = "meal";
+        row.innerHTML =
+          '<div class="icon">' + def.icon + '</div>' +
+          '<div class="meal-name">' + def.name + '</div>' +
+          '<div>' + escHTML(title) + '</div>';
+        return row;
+      }
+
+      const det = document.createElement("details");
+      det.className = "meal-accordion";
+
+      const sum = document.createElement("summary");
+      sum.innerHTML =
+        '<div class="icon">' + def.icon + '</div>' +
+        '<div class="meal-name">' + def.name + '</div>' +
+        '<div class="meal-title">' + escHTML(title) + '</div>' +
+        '<div class="chev-sm"></div>';
+      det.appendChild(sum);
+
+      const body = document.createElement("div");
+      body.className = "meal-details";
+      let html = "";
+      if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
+        html += "<h4>Состав</h4><ul>" +
+          meal.ingredients.map(i => "<li>" + escHTML(i) + "</li>").join("") +
+          "</ul>";
+      }
+      if (typeof meal.recipe === "string" && meal.recipe.trim()) {
+        html += "<h4>Рецепт</h4><p>" + escHTML(meal.recipe) + "</p>";
+      }
+      if (meal.kbju || meal.calories != null) {
+        const parts = [];
+        if (meal.kbju) parts.push(escHTML(meal.kbju));
+        if (meal.calories != null) parts.push("<strong>" + escHTML(meal.calories) + " ккал</strong>");
+        html += '<div><span class="kbju">' + parts.join(" · ") + "</span></div>";
+      }
+      body.innerHTML = html;
+      det.appendChild(body);
+      return det;
     }
 
     function renderWeekSwitcher(container, active, onChange) {
@@ -1270,17 +1402,9 @@
         const det = document.createElement("details");
         det.className = "day-accordion";
         const sum = document.createElement("summary");
-        sum.innerHTML = '<span>' + day + '</span><span class="chev"></span>';
+        sum.innerHTML = '<span>' + escHTML(day) + '</span><span class="chev"></span>';
         det.appendChild(sum);
-        MEAL_KEYS.forEach(m => {
-          const row = document.createElement("div");
-          row.className = "meal";
-          row.innerHTML =
-            '<div class="icon">' + m.icon + '</div>' +
-            '<div class="meal-name">' + m.name + '</div>' +
-            '<div>' + (meals[m.key] || '—') + '</div>';
-          det.appendChild(row);
-        });
+        MEAL_KEYS.forEach(m => det.appendChild(renderMeal(meals[m.key], m)));
         list.appendChild(det);
       });
     }
