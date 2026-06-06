@@ -6,3 +6,13 @@ node_modules/
 *.log
 _smoke.html
 _shot*.png
+
+# Защита от случайного коммита секретов и заметок.
+# Если потребуется отслеживать конкретный .txt, добавляй его явно: `git add -f path.txt`.
+*.txt
+*token*
+*secret*
+*.pem
+*.key
+.env
+.env.*
