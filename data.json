@@ -4,6 +4,7 @@
     "total_days": 21,
     "start_date": "2025-06-01"
   },
+  "coach_overrides": {},
   "weeks": [
     {
       "week": 1,

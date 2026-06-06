@@ -886,6 +886,32 @@
             <button class="btn btn--ghost" id="cWipeBtn">Удалить все</button>
           </div>
         </div>
+
+        <div class="card">
+          <h2>Публикация для всех участников</h2>
+          <div class="muted" style="font-size:13px; margin-bottom:10px">
+            Вставь один раз Personal Access Token из GitHub. После этого нажатие <b>«Опубликовать»</b>
+            запишет твои блюда в <code id="pubRepoName">data.json</code>, и у всех участников меню обновится
+            через 1–2 минуты. Токен хранится только на этом устройстве.
+          </div>
+
+          <div>
+            <label for="cToken">GitHub Personal Access Token</label>
+            <div style="display:flex; gap:8px; align-items:stretch">
+              <input id="cToken" type="password" placeholder="github_pat_..." autocomplete="off" style="flex:1">
+              <button type="button" class="btn btn--ghost btn--sm" id="cTokenShow" aria-label="Показать">👁</button>
+            </div>
+            <div class="form-hint" id="cTokenStatus">Токен не задан</div>
+          </div>
+
+          <div class="grid-2" style="margin-top:12px">
+            <button type="button" class="btn btn--ghost" id="cTokenSaveBtn">Сохранить токен</button>
+            <button type="button" class="btn" id="cPublishBtn" disabled>Опубликовать</button>
+          </div>
+
+          <div class="muted" style="margin-top:10px; font-size:12px" id="cPublishInfo">—</div>
+          <div class="muted" style="margin-top:4px; font-size:12px" id="cPublishStatus">Ещё не публиковалось</div>
+        </div>
       </section>
     </main>
 
@@ -972,6 +998,14 @@
 
     const COACH_CODE = "2026";
 
+    // Репозиторий для публикации меню через GitHub Contents API.
+    // Если форкаешь — поправь owner / name / branch.
+    const REPO = { owner: "Acronim74", name: "Diet-journal", branch: "main", file: "data.json" };
+
+    // Ключи, которые НЕ должны попадать в экспортируемый JSON-бэкап
+    // (личный токен и флаг коуч-режима — приватные для устройства).
+    const PRIVATE_KEYS = ["gh_token", "coach_mode_active", "gh_last_publish"];
+
     const state = {
       data: null,
       tab: "measurements",
@@ -1027,6 +1061,20 @@
     }
 
     // -------- Coach overrides (per-date menu, edited via coach mode) --------
+    function isCoachDevice() {
+      return localStorage.getItem("coach_mode_active") === "1";
+    }
+    function markCoachDevice() {
+      localStorage.setItem("coach_mode_active", "1");
+    }
+    function getPublishedOverrides() {
+      return (state.data && state.data.coach_overrides && typeof state.data.coach_overrides === "object")
+        ? state.data.coach_overrides : {};
+    }
+    function getEffectiveOverrides() {
+      return isCoachDevice() ? getCoachOverrides() : getPublishedOverrides();
+    }
+
     function getCoachOverrides() {
       try {
         const raw = localStorage.getItem("coach_overrides");
@@ -1052,14 +1100,15 @@
       }
     }
 
-    // Merge coach override + data.json fallback for a single date
+    // Merge coach override + data.json fallback for a single date.
+    // Participants see published overrides (data.coach_overrides).
+    // Coach (on their device) sees their local working copy.
     function getMealsForDate(date) {
       const iso = isoDate(date);
       const weekday = getDayOfWeekRu(date);
-      const overrides = getCoachOverrides();
+      const overrides = getEffectiveOverrides();
       const dayOverride = overrides[iso] || {};
 
-      // Find marathon week number for this date
       const start = getMarathonStart();
       const daysPassed = Math.floor((startOfDay(date) - start) / 86400000);
       const weekNum = Math.floor(daysPassed / 7) + 1;
@@ -1074,10 +1123,9 @@
       return { iso, weekday, meals };
     }
 
-    // Collect all coach-defined ingredient strings for a given marathon week
     function collectCoachIngredientsForWeek(weekNum) {
       const start = getMarathonStart();
-      const overrides = getCoachOverrides();
+      const overrides = getEffectiveOverrides();
       const result = [];
       for (let i = 0; i < 7; i++) {
         const dayIdx = (weekNum - 1) * 7 + i;
@@ -1206,6 +1254,7 @@
       bindForm();
       bindCoachTriggers();
       bindCoachForm();
+      bindPublishControls();
       renderAll();
       maybeOnboard();
 
@@ -1848,6 +1897,7 @@
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
+        if (PRIVATE_KEYS.includes(k)) continue;
         data[k] = localStorage.getItem(k);
       }
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -1871,6 +1921,7 @@
           if (!obj || typeof obj !== "object") throw new Error("bad");
           if (!confirm("Импорт перезапишет текущие данные. Продолжить?")) return;
           Object.entries(obj).forEach(([k, v]) => {
+            if (PRIVATE_KEYS.includes(k)) return;
             if (typeof v === "string") localStorage.setItem(k, v);
           });
           toast("Данные восстановлены");
@@ -1969,13 +2020,33 @@
     }
 
     function openCoachPage() {
+      // Помечаем устройство как «коуч»: с этого момента render использует
+      // локальные переопределения, а не опубликованные из data.json.
+      const wasCoach = isCoachDevice();
+      markCoachDevice();
+
+      // При самом первом входе подтягиваем уже опубликованные блюда из data.json
+      // в локальный буфер, чтобы коуч начал с актуального состояния.
+      if (!wasCoach) {
+        const local = getCoachOverrides();
+        const published = getPublishedOverrides();
+        if (Object.keys(local).length === 0 && Object.keys(published).length > 0) {
+          saveCoachOverrides(deepClone(published));
+        }
+      }
+
       showTab("coach");
       $("#cDate").value = isoDate(new Date());
       updateCoachDateInfo();
-      // Пустая форма по умолчанию
       coachClearForm();
       renderCoachList();
+      renderPublishUI();
+
+      // Пере-рендерим вкладки, поскольку флаг isCoachDevice мог только что включиться
+      renderMenuTab(); renderShoppingTab(); renderArchiveTab();
     }
+
+    function deepClone(x) { return JSON.parse(JSON.stringify(x)); }
 
     function bindCoachForm() {
       const f = $("#coachForm");
@@ -2023,6 +2094,7 @@
         toast("Сохранено");
         coachClearForm();
         renderCoachList();
+        renderPublishUI();
         // Обновляем зависимые вкладки
         renderMenuTab();
         renderShoppingTab();
@@ -2047,11 +2119,164 @@
         saveCoachOverrides({});
         coachClearForm();
         renderCoachList();
+        renderPublishUI();
         renderMenuTab();
         renderShoppingTab();
         renderArchiveTab();
         toast("Очищено");
       });
+    }
+
+    // ---------- GitHub publish ----------
+    function getGhToken() { return localStorage.getItem("gh_token") || ""; }
+    function setGhToken(t) {
+      if (t) localStorage.setItem("gh_token", t);
+      else localStorage.removeItem("gh_token");
+    }
+
+    function bindPublishControls() {
+      $("#pubRepoName").textContent = REPO.owner + "/" + REPO.name + "@" + REPO.branch + " · " + REPO.file;
+
+      $("#cTokenShow").addEventListener("click", () => {
+        const inp = $("#cToken");
+        inp.type = (inp.type === "password") ? "text" : "password";
+      });
+
+      $("#cTokenSaveBtn").addEventListener("click", () => {
+        const v = $("#cToken").value.trim();
+        setGhToken(v);
+        toast(v ? "Токен сохранён" : "Токен удалён");
+        renderPublishUI();
+      });
+
+      $("#cPublishBtn").addEventListener("click", publishMenuToGitHub);
+    }
+
+    function renderPublishUI() {
+      const token = getGhToken();
+      $("#cToken").value = token;
+      $("#cToken").type = "password";
+      $("#cTokenStatus").textContent = token
+        ? "Токен сохранён ✓ (только на этом устройстве)"
+        : "Токен не задан";
+
+      const local = getCoachOverrides();
+      const published = getPublishedOverrides();
+      const localDays = Object.keys(local).length;
+      const publishedDays = Object.keys(published).length;
+      const localMeals = countMeals(local);
+      const publishedMeals = countMeals(published);
+      $("#cPublishInfo").innerHTML =
+        "Локально: <b>" + localDays + (localDays === 1 ? " день" : " дн.") + " / " +
+        localMeals + (localMeals === 1 ? " блюдо" : " блюд") + "</b> · " +
+        "Опубликовано: <b>" + publishedDays + " дн. / " + publishedMeals + " блюд</b>" +
+        (deepEqual(local, published) ? "" : ' · <span style="color:var(--accent)">есть несохранённые изменения</span>');
+
+      $("#cPublishBtn").disabled = !token || localDays === 0;
+
+      const last = localStorage.getItem("gh_last_publish");
+      $("#cPublishStatus").textContent = last
+        ? "Последняя публикация: " + last
+        : "Ещё не публиковалось";
+    }
+
+    function countMeals(o) {
+      let n = 0;
+      Object.values(o || {}).forEach(d => { if (d) n += Object.keys(d).length; });
+      return n;
+    }
+    function deepEqual(a, b) {
+      try { return JSON.stringify(a) === JSON.stringify(b); }
+      catch (e) { return false; }
+    }
+
+    async function publishMenuToGitHub() {
+      const token = getGhToken();
+      if (!token) { toast("Сначала сохрани токен"); return; }
+      const btn = $("#cPublishBtn");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Публикую…";
+
+      try {
+        // 1) Получить текущий data.json и его SHA
+        const url = "https://api.github.com/repos/" + REPO.owner + "/" + REPO.name +
+                    "/contents/" + encodeURIComponent(REPO.file) + "?ref=" + encodeURIComponent(REPO.branch);
+        const getRes = await fetch(url, {
+          headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }
+        });
+        if (!getRes.ok) {
+          const t = await getRes.text();
+          throw new Error("GitHub GET " + getRes.status + ": " + t.slice(0, 200));
+        }
+        const fileInfo = await getRes.json();
+        const remoteContent = b64ToUtf8(fileInfo.content.replace(/\s/g, ""));
+        let remoteData;
+        try { remoteData = JSON.parse(remoteContent); }
+        catch (e) { throw new Error("Не удалось разобрать текущий data.json"); }
+
+        // 2) Подставить наш срез
+        remoteData.coach_overrides = getCoachOverrides();
+
+        // 3) Закодировать и отправить PUT
+        const newContent = JSON.stringify(remoteData, null, 2) + "\n";
+        const b64 = utf8ToB64(newContent);
+        const localDays = Object.keys(getCoachOverrides()).length;
+        const commitMsg = "Coach: update menu (" + localDays + " day" + (localDays === 1 ? "" : "s") + ")";
+
+        const putRes = await fetch(
+          "https://api.github.com/repos/" + REPO.owner + "/" + REPO.name +
+          "/contents/" + encodeURIComponent(REPO.file),
+          {
+            method: "PUT",
+            headers: {
+              Authorization: "Bearer " + token,
+              Accept: "application/vnd.github+json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              message: commitMsg,
+              content: b64,
+              sha: fileInfo.sha,
+              branch: REPO.branch
+            })
+          }
+        );
+        if (!putRes.ok) {
+          const t = await putRes.text();
+          throw new Error("GitHub PUT " + putRes.status + ": " + t.slice(0, 200));
+        }
+        const putJson = await putRes.json();
+        const sha = (putJson.commit && putJson.commit.sha) || "";
+
+        // 4) Зафиксировать в локальном state.data, чтобы UI сразу показал актуальное
+        state.data.coach_overrides = remoteData.coach_overrides;
+
+        const now = new Date();
+        const ts = pad2(now.getDate()) + "." + pad2(now.getMonth() + 1) + " " +
+                   pad2(now.getHours()) + ":" + pad2(now.getMinutes()) +
+                   (sha ? " · " + sha.slice(0, 7) : "");
+        localStorage.setItem("gh_last_publish", ts);
+
+        toast("Опубликовано! У всех обновится через 1–2 мин.");
+        renderPublishUI();
+      } catch (e) {
+        console.error(e);
+        alert("Ошибка публикации:\n\n" + e.message +
+              "\n\nПроверь, что токен валиден и имеет права Contents: Read and Write на " +
+              REPO.owner + "/" + REPO.name + ".");
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = !getGhToken() || Object.keys(getCoachOverrides()).length === 0;
+      }
+    }
+
+    // UTF-8 ↔ base64 (atob/btoa напрямую работают только с latin-1)
+    function utf8ToB64(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+    function b64ToUtf8(b64) {
+      return decodeURIComponent(escape(atob(b64)));
     }
 
     function updateCoachDateInfo() {
@@ -2185,6 +2410,7 @@
             coachClearForm();
           }
           renderCoachList();
+          renderPublishUI();
           renderMenuTab(); renderShoppingTab(); renderArchiveTab();
           toast("Удалено");
         });
