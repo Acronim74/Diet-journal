@@ -144,7 +144,8 @@
 
     /* INPUTS */
     label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-    input[type="text"], input[type="number"], input[type="date"] {
+    input[type="text"], input[type="number"], input[type="date"],
+    textarea, select {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -155,12 +156,20 @@
       transition: border-color 150ms, box-shadow 150ms;
       -webkit-appearance: none; appearance: none;
     }
-    input:focus {
+    input:focus, textarea:focus, select:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(233, 77, 107, 0.15);
     }
-    input::placeholder { color: #b5b9c2; }
+    input::placeholder, textarea::placeholder { color: #b5b9c2; }
+    textarea { resize: vertical; min-height: 64px; font-family: inherit; line-height: 1.4; }
+    select {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236c757d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
 
     .btn {
       display: inline-flex;
@@ -450,6 +459,101 @@
     }
     .shop-add input { flex: 1; }
     .shop-add .btn { width: 44px; padding: 0; font-size: 22px; line-height: 1; flex-shrink: 0; }
+    .shop-tag {
+      font-size: 10px;
+      color: var(--muted);
+      background: var(--page-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      text-transform: lowercase;
+    }
+    .shop-item.from-menu .text { color: var(--bg-dark); }
+    .shop-item.from-menu.checked .text { color: var(--muted); }
+
+    /* COACH MODE */
+    .coach-link-wrap {
+      text-align: center;
+      margin-top: 32px;
+      padding-bottom: 8px;
+    }
+    .coach-link {
+      background: none; border: 0;
+      color: #b5b9c2;
+      font: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 8px 12px;
+      letter-spacing: 0.5px;
+    }
+    .coach-link:hover { color: var(--muted); text-decoration: underline; }
+
+    .coach-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .ing-list {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 8px;
+    }
+    .ing-list:empty { margin: 0; }
+    .ing-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .ing-row:last-child { border-bottom: 0; }
+    .ing-row .ing-text { flex: 1; }
+    .ing-row .del {
+      background: none; border: 0;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .ing-row .del:hover { color: var(--accent); }
+    .ing-add {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 44px;
+      gap: 8px;
+    }
+    .ing-add .btn { width: 100%; padding: 0; font-size: 22px; line-height: 1; }
+
+    .coach-meal {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .coach-meal:last-child { border-bottom: 0; }
+    .coach-meal .cm-main { min-width: 0; }
+    .coach-meal .cm-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .coach-meal .cm-sub { color: var(--muted); font-size: 12px; }
+    .coach-meal .cm-edit {
+      background: none; border: 0;
+      color: var(--accent);
+      font: inherit; font-size: 12px;
+      cursor: pointer; padding: 4px 8px;
+    }
+    .coach-meal .cm-del {
+      background: none; border: 0;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer; padding: 0 6px;
+      line-height: 1;
+    }
+    .coach-meal .cm-del:hover { color: var(--accent); }
 
     /* TABLE */
     .table-wrap {
@@ -697,6 +801,91 @@
           <input type="file" accept=".json,application/json" id="fileImport" hidden>
           <button class="btn btn--ghost btn--block" id="btnNotify" style="margin-top:10px">Включить напоминания</button>
         </div>
+
+        <div class="coach-link-wrap">
+          <button class="coach-link" id="coachLink">Режим коуча</button>
+        </div>
+      </section>
+
+      <!-- TAB 5 (hidden from nav): COACH -->
+      <section class="tab-content" data-tab="coach" hidden>
+        <div class="card coach-header">
+          <div>
+            <h2 style="margin:0">Режим коуча</h2>
+            <div class="muted" style="margin-top:2px">Заполнение меню по датам</div>
+          </div>
+          <button class="btn btn--ghost btn--sm" id="coachExitBtn">Выйти</button>
+        </div>
+
+        <div class="card">
+          <form id="coachForm" class="stack" autocomplete="off">
+            <div class="grid-2">
+              <div>
+                <label for="cDate">Дата</label>
+                <input id="cDate" type="date" required>
+              </div>
+              <div>
+                <label for="cMeal">Приём пищи</label>
+                <select id="cMeal">
+                  <option value="breakfast">🌅 Завтрак</option>
+                  <option value="lunch">☀️ Обед</option>
+                  <option value="snack">🍎 Перекус</option>
+                  <option value="dinner">🌙 Ужин</option>
+                </select>
+              </div>
+            </div>
+            <div class="muted" id="cDateInfo" style="font-size:12px">—</div>
+
+            <div>
+              <label for="cTitle">Название блюда</label>
+              <input id="cTitle" type="text" placeholder="Например: Овсяная каша с ягодами" required>
+            </div>
+
+            <div>
+              <label>Ингредиенты</label>
+              <div id="cIngList" class="ing-list"></div>
+              <div class="ing-add">
+                <input id="cIngName" type="text" placeholder="Название (например, Овсянка)">
+                <input id="cIngWeight" type="text" placeholder="Вес: 50 г / 200 мл / 1 шт">
+                <button type="button" id="cIngAddBtn" class="btn btn--sm" aria-label="Добавить">+</button>
+              </div>
+              <div class="form-hint">Каждый ингредиент попадёт в список продуктов этой недели</div>
+            </div>
+
+            <div>
+              <label for="cRecipe">Рецепт</label>
+              <textarea id="cRecipe" rows="3" placeholder="Шаги приготовления (необязательно)"></textarea>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label for="cKbju">КБЖУ</label>
+                <input id="cKbju" type="text" placeholder="Б 9 г · Ж 8 г · У 55 г">
+              </div>
+              <div>
+                <label for="cCalories">Калории, ккал</label>
+                <input id="cCalories" type="number" min="0" placeholder="340">
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <button type="button" class="btn btn--ghost" id="cClearBtn">Очистить форму</button>
+              <button type="submit" class="btn">Сохранить блюдо</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="shopping-header">
+            <h2 style="margin:0">Заполненные блюда</h2>
+            <span class="muted" id="coachListCount">—</span>
+          </div>
+          <div id="coachList"></div>
+          <div class="grid-2" style="margin-top:12px">
+            <button class="btn btn--outline" id="cExportBtn">Скачать JSON</button>
+            <button class="btn btn--ghost" id="cWipeBtn">Удалить все</button>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -727,6 +916,19 @@
       <p>Введите имя — оно появится в отчёте марафона.</p>
       <input id="onbName" type="text" placeholder="Ваше имя" maxlength="40">
       <button class="btn btn--block" id="onbBtn">Начать</button>
+    </div>
+  </div>
+
+  <!-- Coach access code modal -->
+  <div id="coachAuth" class="modal-overlay" hidden>
+    <div class="modal">
+      <h2>Режим коуча</h2>
+      <p>Введите код доступа</p>
+      <input id="caCode" type="text" inputmode="numeric" placeholder="код" maxlength="16" autocomplete="off">
+      <div class="grid-2" style="margin-top:4px">
+        <button class="btn btn--ghost" id="caCancel">Отмена</button>
+        <button class="btn" id="caOk">Войти</button>
+      </div>
     </div>
   </div>
 
@@ -764,8 +966,11 @@
     const MEAL_KEYS = [
       { key: "breakfast", icon: "🌅", name: "Завтрак" },
       { key: "lunch",     icon: "☀️", name: "Обед" },
+      { key: "snack",     icon: "🍎", name: "Перекус" },
       { key: "dinner",    icon: "🌙", name: "Ужин" }
     ];
+
+    const COACH_CODE = "2026";
 
     const state = {
       data: null,
@@ -819,6 +1024,117 @@
     function escHTML(s) {
       return String(s == null ? "" : s).replace(/[&<>"']/g,
         c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    }
+
+    // -------- Coach overrides (per-date menu, edited via coach mode) --------
+    function getCoachOverrides() {
+      try {
+        const raw = localStorage.getItem("coach_overrides");
+        const o = raw ? JSON.parse(raw) : {};
+        return (o && typeof o === "object") ? o : {};
+      } catch (e) { return {}; }
+    }
+    function saveCoachOverrides(obj) {
+      localStorage.setItem("coach_overrides", JSON.stringify(obj || {}));
+    }
+    function setCoachMeal(dateIso, mealKey, mealObj) {
+      const all = getCoachOverrides();
+      if (!all[dateIso]) all[dateIso] = {};
+      all[dateIso][mealKey] = mealObj;
+      saveCoachOverrides(all);
+    }
+    function deleteCoachMeal(dateIso, mealKey) {
+      const all = getCoachOverrides();
+      if (all[dateIso]) {
+        delete all[dateIso][mealKey];
+        if (Object.keys(all[dateIso]).length === 0) delete all[dateIso];
+        saveCoachOverrides(all);
+      }
+    }
+
+    // Merge coach override + data.json fallback for a single date
+    function getMealsForDate(date) {
+      const iso = isoDate(date);
+      const weekday = getDayOfWeekRu(date);
+      const overrides = getCoachOverrides();
+      const dayOverride = overrides[iso] || {};
+
+      // Find marathon week number for this date
+      const start = getMarathonStart();
+      const daysPassed = Math.floor((startOfDay(date) - start) / 86400000);
+      const weekNum = Math.floor(daysPassed / 7) + 1;
+      const w = getWeekByNumber(weekNum);
+      const fallback = (w && w.menu && w.menu[weekday]) || {};
+
+      const meals = {};
+      MEAL_KEYS.forEach(m => {
+        const v = (dayOverride[m.key] !== undefined) ? dayOverride[m.key] : fallback[m.key];
+        if (v != null && v !== "") meals[m.key] = v;
+      });
+      return { iso, weekday, meals };
+    }
+
+    // Collect all coach-defined ingredient strings for a given marathon week
+    function collectCoachIngredientsForWeek(weekNum) {
+      const start = getMarathonStart();
+      const overrides = getCoachOverrides();
+      const result = [];
+      for (let i = 0; i < 7; i++) {
+        const dayIdx = (weekNum - 1) * 7 + i;
+        if (dayIdx >= state.data.marathon.total_days) break;
+        const date = new Date(start.getTime() + dayIdx * 86400000);
+        const iso = isoDate(date);
+        const dayOverride = overrides[iso];
+        if (!dayOverride) continue;
+        MEAL_KEYS.forEach(m => {
+          const meal = dayOverride[m.key];
+          if (meal && typeof meal === "object" && Array.isArray(meal.ingredients)) {
+            meal.ingredients.forEach(s => { if (s && typeof s === "string") result.push(s); });
+          }
+        });
+      }
+      return result;
+    }
+
+    // Aggregate ingredient strings: "Овсянка — 50 г" + "Овсянка — 100 г" → "Овсянка — 150 г"
+    function aggregateIngredients(strings) {
+      const sums = new Map();   // key="name|unit" → { name, unit, sum }
+      const plain = new Set();  // names without weights
+      const seen = new Set();
+
+      const splitNameWeight = (s) => {
+        const m = s.match(/^\s*(.+?)\s*[—\u2014\-]\s*(.+?)\s*$/);
+        return m ? [m[1].trim(), m[2].trim()] : [s.trim(), null];
+      };
+      const splitNumberUnit = (w) => {
+        const m = w.match(/^([\d.,]+)\s*(.*)$/);
+        if (!m) return null;
+        const n = parseFloat(m[1].replace(",", "."));
+        if (!isFinite(n)) return null;
+        return { n, unit: (m[2] || "").trim() };
+      };
+
+      for (const s of strings) {
+        if (!s || typeof s !== "string") continue;
+        if (seen.has(s)) continue;
+        seen.add(s);
+        const [name, weight] = splitNameWeight(s);
+        if (!weight) { plain.add(name); continue; }
+        const nu = splitNumberUnit(weight);
+        if (!nu) { plain.add(name + " — " + weight); continue; }
+        const key = name.toLowerCase() + "|" + nu.unit.toLowerCase();
+        const prev = sums.get(key) || { name, unit: nu.unit, sum: 0 };
+        prev.sum += nu.n;
+        sums.set(key, prev);
+      }
+
+      const out = [];
+      for (const v of sums.values()) {
+        const rounded = Math.round(v.sum * 100) / 100;
+        out.push(v.name + " — " + rounded + (v.unit ? " " + v.unit : ""));
+      }
+      for (const p of plain) out.push(p);
+      return out.sort((a, b) => a.localeCompare(b, "ru"));
     }
     function getCurrentDay() {
       const start = getMarathonStart();
@@ -888,6 +1204,8 @@
       bindShoppingControls();
       bindExportControls();
       bindForm();
+      bindCoachTriggers();
+      bindCoachForm();
       renderAll();
       maybeOnboard();
 
@@ -1129,28 +1447,50 @@
       });
       const list = $("#menuList");
       list.innerHTML = "";
-      const w = getWeekByNumber(state.menuWeek);
-      if (!w || !w.menu || Object.keys(w.menu).length === 0) {
+      renderDayCardsForWeek(list, state.menuWeek, /*highlightToday*/ true);
+    }
+
+    function renderDayCardsForWeek(container, weekNum, highlightToday) {
+      const start = getMarathonStart();
+      const todayIso = isoDate(new Date());
+      const totalDays = state.data.marathon.total_days;
+      let anyRendered = false;
+
+      for (let i = 0; i < 7; i++) {
+        const dayIdx = (weekNum - 1) * 7 + i;
+        if (dayIdx >= totalDays) break;
+        const date = new Date(start.getTime() + dayIdx * 86400000);
+        const { iso, weekday, meals } = getMealsForDate(date);
+        if (Object.keys(meals).length === 0) continue;
+        anyRendered = true;
+
+        const det = document.createElement("details");
+        det.className = "day-accordion";
+        if (highlightToday && iso === todayIso) det.open = true;
+
+        const sum = document.createElement("summary");
+        const todayMark = (highlightToday && iso === todayIso)
+          ? '<span class="day-today-mark">сегодня</span>' : '';
+        sum.innerHTML =
+          '<span>' + escHTML(weekday) +
+          ' <span class="muted" style="font-weight:400">· ' +
+          pad2(date.getDate()) + '.' + pad2(date.getMonth() + 1) +
+          '</span>' + todayMark +
+          '</span><span class="chev"></span>';
+        det.appendChild(sum);
+
+        MEAL_KEYS.forEach(m => {
+          if (meals[m.key]) det.appendChild(renderMeal(meals[m.key], m));
+        });
+        container.appendChild(det);
+      }
+
+      if (!anyRendered) {
         const c = document.createElement("div");
         c.className = "card";
         c.innerHTML = '<div class="muted">Меню на эту неделю ещё не добавлено</div>';
-        list.appendChild(c);
-        return;
+        container.appendChild(c);
       }
-      const todayDow = getDayOfWeekRu(new Date());
-      const isThisWeek = (state.menuWeek === getCurrentWeek());
-      Object.entries(w.menu).forEach(([day, meals]) => {
-        const det = document.createElement("details");
-        det.className = "day-accordion";
-        if (isThisWeek && day === todayDow) det.open = true;
-        const sum = document.createElement("summary");
-        sum.innerHTML = '<span>' + escHTML(day) +
-          (isThisWeek && day === todayDow ? '<span class="day-today-mark">сегодня</span>' : '') +
-          '</span><span class="chev"></span>';
-        det.appendChild(sum);
-        MEAL_KEYS.forEach(m => det.appendChild(renderMeal(meals[m.key], m)));
-        list.appendChild(det);
-      });
     }
 
     function renderMeal(meal, def) {
@@ -1225,47 +1565,61 @@
       let extras = [];
       try { extras = JSON.parse(localStorage.getItem("shopping_extra_week_" + weekNum) || "[]"); } catch (e) {}
       if (!Array.isArray(extras)) extras = [];
-      let checked = [];
-      try { checked = JSON.parse(localStorage.getItem("shopping_checked_week_" + weekNum) || "[]"); } catch (e) {}
-      if (!Array.isArray(checked)) checked = [];
-      return { base, extras, checked, total: base.length + extras.length };
+
+      const auto = aggregateIngredients(collectCoachIngredientsForWeek(weekNum));
+
+      // Combined list (auto items already excluded if duplicated in base by exact match)
+      const baseSet = new Set(base.map(s => s.toLowerCase()));
+      const autoFiltered = auto.filter(s => !baseSet.has(s.toLowerCase()));
+
+      // checked is stored as array of STRINGS (item text). Legacy numeric arrays are reset.
+      let rawChecked = [];
+      try { rawChecked = JSON.parse(localStorage.getItem("shopping_checked_week_" + weekNum) || "[]"); } catch (e) {}
+      if (!Array.isArray(rawChecked)) rawChecked = [];
+      const checked = rawChecked.filter(s => typeof s === "string");
+
+      const items = [
+        ...base.map(t => ({ text: t, source: "base", extra: false })),
+        ...autoFiltered.map(t => ({ text: t, source: "auto", extra: false })),
+        ...extras.map(t => ({ text: t, source: "extra", extra: true }))
+      ];
+      const checkedSet = new Set(checked);
+      return { items, checkedSet, base, extras, auto: autoFiltered };
     }
-    function saveShopping(weekNum, extras, checked) {
+    function saveShoppingExtras(weekNum, extras) {
       localStorage.setItem("shopping_extra_week_" + weekNum, JSON.stringify(extras));
-      localStorage.setItem("shopping_checked_week_" + weekNum, JSON.stringify(checked));
+    }
+    function saveShoppingChecked(weekNum, checkedSet) {
+      localStorage.setItem("shopping_checked_week_" + weekNum, JSON.stringify([...checkedSet]));
     }
 
     function renderShoppingTab() {
       const weekNum = getCurrentWeek();
       const st = getShoppingState(weekNum);
-      const all = [...st.base.map(t => ({ text: t, extra: false })),
-                   ...st.extras.map(t => ({ text: t, extra: true }))];
       const list = $("#shopList");
       list.innerHTML = "";
       const counter = $("#shopCounter");
-      const checkedCount = st.checked.filter(i => i < all.length).length;
-      counter.textContent = "Куплено: " + checkedCount + " / " + all.length +
+      const checkedCount = st.items.filter(it => st.checkedSet.has(it.text)).length;
+      counter.textContent = "Куплено: " + checkedCount + " / " + st.items.length +
         " · неделя " + weekNum;
 
-      if (all.length === 0) {
+      if (st.items.length === 0) {
         list.innerHTML = '<div class="muted" style="padding:12px 0">Список пуст. Добавьте продукты ниже.</div>';
         return;
       }
 
-      all.forEach((item, idx) => {
+      st.items.forEach(item => {
         const row = document.createElement("div");
-        row.className = "shop-item" + (st.checked.includes(idx) ? " checked" : "");
+        const isChecked = st.checkedSet.has(item.text);
+        row.className = "shop-item" + (isChecked ? " checked" : "")
+          + (item.source === "auto" ? " from-menu" : "");
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.checked = st.checked.includes(idx);
+        cb.checked = isChecked;
         cb.addEventListener("change", () => {
-          let checked = st.checked.slice();
-          if (cb.checked) {
-            if (!checked.includes(idx)) checked.push(idx);
-          } else {
-            checked = checked.filter(i => i !== idx);
-          }
-          saveShopping(weekNum, st.extras, checked);
+          const checkedSet = new Set(st.checkedSet);
+          if (cb.checked) checkedSet.add(item.text); else checkedSet.delete(item.text);
+          saveShoppingChecked(weekNum, checkedSet);
           renderShoppingTab();
         });
         const txt = document.createElement("span");
@@ -1273,19 +1627,23 @@
         txt.textContent = item.text;
         row.appendChild(cb);
         row.appendChild(txt);
+        if (item.source === "auto") {
+          const tag = document.createElement("span");
+          tag.className = "shop-tag";
+          tag.textContent = "из меню";
+          row.appendChild(tag);
+        }
         if (item.extra) {
           const del = document.createElement("button");
           del.className = "del";
           del.title = "Удалить";
           del.textContent = "×";
           del.addEventListener("click", () => {
-            const extraIdx = idx - st.base.length;
-            const extras = st.extras.slice();
-            extras.splice(extraIdx, 1);
-            const checked = st.checked
-              .filter(i => i !== idx)
-              .map(i => (i > idx ? i - 1 : i));
-            saveShopping(weekNum, extras, checked);
+            const extras = st.extras.filter(t => t !== item.text);
+            saveShoppingExtras(weekNum, extras);
+            const checkedSet = new Set(st.checkedSet);
+            checkedSet.delete(item.text);
+            saveShoppingChecked(weekNum, checkedSet);
             renderShoppingTab();
           });
           row.appendChild(del);
@@ -1301,8 +1659,9 @@
         if (!v) return;
         const weekNum = getCurrentWeek();
         const st = getShoppingState(weekNum);
-        const extras = [...st.extras, v];
-        saveShopping(weekNum, extras, st.checked);
+        if (!st.extras.includes(v) && !st.base.includes(v) && !st.auto.includes(v)) {
+          saveShoppingExtras(weekNum, [...st.extras, v]);
+        }
         inp.value = "";
         renderShoppingTab();
       };
@@ -1312,8 +1671,7 @@
       });
       $("#shopReset").addEventListener("click", () => {
         const weekNum = getCurrentWeek();
-        const st = getShoppingState(weekNum);
-        saveShopping(weekNum, st.extras, []);
+        saveShoppingChecked(weekNum, new Set());
         renderShoppingTab();
         toast("Отметки сброшены");
       });
@@ -1393,42 +1751,32 @@
     function renderArchiveMenu() {
       const list = $("#archMenuList");
       list.innerHTML = "";
-      const w = getWeekByNumber(state.archiveWeek);
-      if (!w || !w.menu) {
-        list.innerHTML = '<div class="muted">Меню на эту неделю отсутствует</div>';
-        return;
-      }
-      Object.entries(w.menu).forEach(([day, meals]) => {
-        const det = document.createElement("details");
-        det.className = "day-accordion";
-        const sum = document.createElement("summary");
-        sum.innerHTML = '<span>' + escHTML(day) + '</span><span class="chev"></span>';
-        det.appendChild(sum);
-        MEAL_KEYS.forEach(m => det.appendChild(renderMeal(meals[m.key], m)));
-        list.appendChild(det);
-      });
+      renderDayCardsForWeek(list, state.archiveWeek, /*highlightToday*/ false);
     }
 
     function renderArchiveShopping() {
       const st = getShoppingState(state.archiveWeek);
-      const all = [...st.base.map(t => ({ text: t, extra: false })),
-                   ...st.extras.map(t => ({ text: t, extra: true }))];
       const list = $("#archShopList");
       list.innerHTML = "";
-      if (all.length === 0) {
+      if (st.items.length === 0) {
         list.innerHTML = '<div class="muted">Список на эту неделю пуст</div>';
         return;
       }
-      all.forEach((item, idx) => {
+      st.items.forEach(item => {
         const row = document.createElement("div");
-        row.className = "shop-item" + (st.checked.includes(idx) ? " checked" : "");
+        const isChecked = st.checkedSet.has(item.text);
+        row.className = "shop-item" + (isChecked ? " checked" : "")
+          + (item.source === "auto" ? " from-menu" : "");
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.checked = st.checked.includes(idx);
+        cb.checked = isChecked;
         cb.disabled = true;
         const txt = document.createElement("span");
         txt.className = "text";
-        txt.textContent = item.text + (item.extra ? "  ·  доп." : "");
+        let suffix = "";
+        if (item.source === "auto") suffix = "  ·  из меню";
+        else if (item.extra) suffix = "  ·  доп.";
+        txt.textContent = item.text + suffix;
         row.appendChild(cb);
         row.appendChild(txt);
         list.appendChild(row);
@@ -1564,6 +1912,285 @@
           sessionStorage.setItem(flag, "1");
         } catch (e) {}
       }
+    }
+
+    // ===========================================================
+    // РЕЖИМ КОУЧА (скрытая страница)
+    // ===========================================================
+    const coachForm = {
+      ingredients: [],
+      editing: null  // { date, meal } — какое блюдо сейчас редактируется
+    };
+
+    function bindCoachTriggers() {
+      // 1) Маленькая ссылка внизу вкладки «Архив»
+      $("#coachLink").addEventListener("click", openCoachAuth);
+
+      // 2) 5 тапов по заголовку приложения в шапке
+      let titleTaps = 0, titleTimer = null;
+      $("#appTitle").addEventListener("click", () => {
+        titleTaps++;
+        clearTimeout(titleTimer);
+        titleTimer = setTimeout(() => { titleTaps = 0; }, 1500);
+        if (titleTaps >= 5) {
+          titleTaps = 0; clearTimeout(titleTimer);
+          openCoachAuth();
+        }
+      });
+
+      // 3) URL-хеш #coach
+      if (location.hash.replace("#", "").split("&")[0] === "coach") {
+        setTimeout(openCoachAuth, 50);
+      }
+
+      // 4) Модалка кода
+      const verify = () => {
+        const val = $("#caCode").value.trim();
+        if (val === COACH_CODE) {
+          $("#coachAuth").hidden = true;
+          openCoachPage();
+        } else {
+          toast("Неверный код");
+          $("#caCode").select();
+        }
+      };
+      $("#caOk").addEventListener("click", verify);
+      $("#caCancel").addEventListener("click", () => { $("#coachAuth").hidden = true; });
+      $("#caCode").addEventListener("keydown", e => { if (e.key === "Enter") verify(); });
+
+      // 5) Кнопка «Выйти» из режима коуча
+      $("#coachExitBtn").addEventListener("click", () => showTab("archive"));
+    }
+
+    function openCoachAuth() {
+      $("#caCode").value = "";
+      $("#coachAuth").hidden = false;
+      setTimeout(() => $("#caCode").focus(), 80);
+    }
+
+    function openCoachPage() {
+      showTab("coach");
+      $("#cDate").value = isoDate(new Date());
+      updateCoachDateInfo();
+      // Пустая форма по умолчанию
+      coachClearForm();
+      renderCoachList();
+    }
+
+    function bindCoachForm() {
+      const f = $("#coachForm");
+      $("#cDate").addEventListener("change", updateCoachDateInfo);
+      $("#cMeal").addEventListener("change", updateCoachDateInfo);
+
+      $("#cIngAddBtn").addEventListener("click", coachAddIngredient);
+      const onIngEnter = e => {
+        if (e.key === "Enter") { e.preventDefault(); coachAddIngredient(); }
+      };
+      $("#cIngName").addEventListener("keydown", onIngEnter);
+      $("#cIngWeight").addEventListener("keydown", onIngEnter);
+
+      $("#cClearBtn").addEventListener("click", coachClearForm);
+
+      f.addEventListener("submit", e => {
+        e.preventDefault();
+        const date = $("#cDate").value;
+        const meal = $("#cMeal").value;
+        const title = $("#cTitle").value.trim();
+        if (!date || !meal || !title) {
+          toast("Заполните дату, приём пищи и название");
+          return;
+        }
+        const recipe = $("#cRecipe").value.trim();
+        const kbju = $("#cKbju").value.trim();
+        const calRaw = $("#cCalories").value.trim();
+        const calories = calRaw === "" ? null : parseInt(calRaw, 10);
+
+        const obj = { title };
+        if (coachForm.ingredients.length > 0) {
+          obj.ingredients = coachForm.ingredients.slice();
+        }
+        if (recipe) obj.recipe = recipe;
+        if (kbju) obj.kbju = kbju;
+        if (calories != null && isFinite(calories)) obj.calories = calories;
+
+        // Если редактировали другое (date, meal) — старую запись удаляем
+        if (coachForm.editing &&
+            (coachForm.editing.date !== date || coachForm.editing.meal !== meal)) {
+          deleteCoachMeal(coachForm.editing.date, coachForm.editing.meal);
+        }
+        setCoachMeal(date, meal, obj);
+
+        toast("Сохранено");
+        coachClearForm();
+        renderCoachList();
+        // Обновляем зависимые вкладки
+        renderMenuTab();
+        renderShoppingTab();
+        renderArchiveTab();
+      });
+
+      $("#cExportBtn").addEventListener("click", () => {
+        const data = getCoachOverrides();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "menu-overrides-" + isoDate(new Date()) + ".json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast("Файл сохранён");
+      });
+
+      $("#cWipeBtn").addEventListener("click", () => {
+        if (!confirm("Удалить все переопределения меню? Это нельзя отменить.")) return;
+        saveCoachOverrides({});
+        coachClearForm();
+        renderCoachList();
+        renderMenuTab();
+        renderShoppingTab();
+        renderArchiveTab();
+        toast("Очищено");
+      });
+    }
+
+    function updateCoachDateInfo() {
+      const v = $("#cDate").value;
+      if (!v) { $("#cDateInfo").textContent = "—"; return; }
+      const d = new Date(v + "T00:00:00");
+      if (isNaN(d)) { $("#cDateInfo").textContent = "—"; return; }
+      const wd = getDayOfWeekRu(d);
+      // Расчёт недели и дня марафона для этой даты (только если попадает)
+      const start = getMarathonStart();
+      const diff = Math.floor((startOfDay(d) - start) / 86400000);
+      let label = wd + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear();
+      if (diff >= 0 && diff < state.data.marathon.total_days) {
+        label += " · день " + (diff + 1) + ", неделя " + (Math.floor(diff / 7) + 1) + " марафона";
+      } else if (diff < 0) {
+        label += " · до старта марафона";
+      } else {
+        label += " · после марафона";
+      }
+      $("#cDateInfo").textContent = label;
+    }
+
+    function coachAddIngredient() {
+      const n = $("#cIngName").value.trim();
+      const w = $("#cIngWeight").value.trim();
+      if (!n) { $("#cIngName").focus(); return; }
+      const text = w ? (n + " — " + w) : n;
+      coachForm.ingredients.push(text);
+      $("#cIngName").value = "";
+      $("#cIngWeight").value = "";
+      $("#cIngName").focus();
+      renderCoachIngList();
+    }
+
+    function renderCoachIngList() {
+      const list = $("#cIngList");
+      list.innerHTML = "";
+      coachForm.ingredients.forEach((text, idx) => {
+        const row = document.createElement("div");
+        row.className = "ing-row";
+        const t = document.createElement("span");
+        t.className = "ing-text";
+        t.textContent = text;
+        const del = document.createElement("button");
+        del.className = "del";
+        del.type = "button";
+        del.textContent = "×";
+        del.addEventListener("click", () => {
+          coachForm.ingredients.splice(idx, 1);
+          renderCoachIngList();
+        });
+        row.appendChild(t);
+        row.appendChild(del);
+        list.appendChild(row);
+      });
+    }
+
+    function coachClearForm() {
+      coachForm.ingredients = [];
+      coachForm.editing = null;
+      $("#cTitle").value = "";
+      $("#cRecipe").value = "";
+      $("#cKbju").value = "";
+      $("#cCalories").value = "";
+      $("#cIngName").value = "";
+      $("#cIngWeight").value = "";
+      renderCoachIngList();
+    }
+
+    function populateCoachForm(dateIso, mealKey, meal) {
+      $("#cDate").value = dateIso;
+      $("#cMeal").value = mealKey;
+      $("#cTitle").value = meal.title || "";
+      $("#cRecipe").value = meal.recipe || "";
+      $("#cKbju").value = meal.kbju || "";
+      $("#cCalories").value = meal.calories != null ? meal.calories : "";
+      coachForm.ingredients = Array.isArray(meal.ingredients) ? meal.ingredients.slice() : [];
+      coachForm.editing = { date: dateIso, meal: mealKey };
+      updateCoachDateInfo();
+      renderCoachIngList();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderCoachList() {
+      const list = $("#coachList");
+      list.innerHTML = "";
+      const all = getCoachOverrides();
+      const entries = [];
+      Object.keys(all).sort().forEach(date => {
+        const day = all[date];
+        MEAL_KEYS.forEach(m => {
+          if (day && day[m.key]) entries.push({ date, mealKey: m.key, meal: day[m.key], def: m });
+        });
+      });
+
+      $("#coachListCount").textContent = entries.length
+        ? entries.length + (entries.length === 1 ? " блюдо" : (entries.length < 5 ? " блюда" : " блюд"))
+        : "пусто";
+
+      if (entries.length === 0) {
+        list.innerHTML = '<div class="muted" style="padding:12px 0">Ещё ничего не заполнено. Заполните форму выше — блюда появятся здесь и сразу попадут на вкладку «Меню».</div>';
+        return;
+      }
+
+      entries.forEach(({ date, mealKey, meal, def }) => {
+        const row = document.createElement("div");
+        row.className = "coach-meal";
+        const isObj = meal && typeof meal === "object";
+        const title = (isObj ? meal.title : meal) || "—";
+        const d = new Date(date + "T00:00:00");
+        const sub = pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + " · " +
+                    getDayOfWeekRu(d) + " · " + def.icon + " " + def.name;
+        const main = document.createElement("div");
+        main.className = "cm-main";
+        main.innerHTML =
+          '<div class="cm-title">' + escHTML(title) + '</div>' +
+          '<div class="cm-sub">' + escHTML(sub) + '</div>';
+        row.appendChild(main);
+
+        const edit = document.createElement("button");
+        edit.className = "cm-edit"; edit.type = "button"; edit.textContent = "Изм.";
+        edit.addEventListener("click", () => populateCoachForm(date, mealKey, isObj ? meal : { title: meal }));
+        row.appendChild(edit);
+
+        const del = document.createElement("button");
+        del.className = "cm-del"; del.type = "button"; del.textContent = "×";
+        del.addEventListener("click", () => {
+          if (!confirm("Удалить «" + title + "»?")) return;
+          deleteCoachMeal(date, mealKey);
+          if (coachForm.editing && coachForm.editing.date === date && coachForm.editing.meal === mealKey) {
+            coachClearForm();
+          }
+          renderCoachList();
+          renderMenuTab(); renderShoppingTab(); renderArchiveTab();
+          toast("Удалено");
+        });
+        row.appendChild(del);
+        list.appendChild(row);
+      });
     }
 
     // ===========================================================
