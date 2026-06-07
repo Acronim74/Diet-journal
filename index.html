@@ -414,6 +414,128 @@
     }
     .meal-details .kbju strong { color: var(--accent); margin-left: 4px; }
 
+    /* Группа блюд одного приёма пищи (main + addon + alt) */
+    .meal-slot {
+      display: block;
+    }
+    /* Дополнительные блюда внутри слота (всё что не первое) — приглушаем icon/name,
+       чтобы взгляд не «бил» по повтору иконки приёма пищи. */
+    .meal-accordion.continued summary .icon,
+    .meal-accordion.continued summary .meal-name {
+      opacity: 0.55;
+    }
+    .meal-accordion.continued summary .icon { font-size: 14px; }
+    .meal-accordion.continued summary .meal-name { font-size: 11px; }
+
+    /* Заголовок блюда + бейдж типа */
+    .meal-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .meal-title-row .meal-title {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .dish-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .dish-badge.addon {
+      background: rgba(46, 162, 113, 0.14);
+      color: #1f7d4d;
+      border: 1px solid rgba(46, 162, 113, 0.35);
+    }
+    .dish-badge.alt {
+      background: rgba(155, 89, 182, 0.14);
+      color: #6f3f9a;
+      border: 1px solid rgba(155, 89, 182, 0.35);
+    }
+
+    /* Блок выбора альтернативы */
+    .alt-picker {
+      margin: 0 16px 0;
+      padding: 10px 12px;
+      background: rgba(155, 89, 182, 0.06);
+      border-left: 3px solid rgba(155, 89, 182, 0.5);
+      border-radius: 6px;
+    }
+    .alt-picker-h {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .alt-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .alt-opt input[type="radio"] {
+      width: 18px; height: 18px;
+      accent-color: #7d4aaa;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .alt-opt + .alt-opt { border-top: 1px dashed rgba(155, 89, 182, 0.25); }
+
+    /* Радио «тип блюда» в форме коуча */
+    .kind-radios {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .kind-radios label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--page-bg);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      transition: background 150ms, border-color 150ms;
+    }
+    .kind-radios label:has(input:checked) {
+      background: rgba(46, 162, 113, 0.08);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .kind-radios input[type="radio"] {
+      width: 16px; height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Маленький бейдж типа в списке коуча */
+    .dish-badge-sm {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-left: 6px;
+      vertical-align: middle;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .dish-badge-sm.addon { background: rgba(46, 162, 113, 0.18); color: #1f7d4d; }
+    .dish-badge-sm.alt   { background: rgba(155, 89, 182, 0.18); color: #6f3f9a; }
+
     /* SHOPPING */
     .shopping-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -1305,6 +1427,20 @@
             </div>
 
             <div>
+              <label>Тип блюда в этом приёме пищи</label>
+              <div id="cKind" class="kind-radios">
+                <label><input type="radio" name="cKind" value="main" checked> Основное</label>
+                <label><input type="radio" name="cKind" value="addon"> В пару</label>
+                <label><input type="radio" name="cKind" value="alt"> Альтернатива</label>
+              </div>
+              <div class="form-hint">
+                <b>Основное</b> — главное блюдо приёма пищи (одно на слот).
+                <b>В пару</b> — обязательное дополнение (соус, чай) — всегда вместе с основным.
+                <b>Альтернатива</b> — вариант на выбор «по кошельку»; участник выбирает один.
+              </div>
+            </div>
+
+            <div>
               <label for="cOrder">Порядок в дне</label>
               <input id="cOrder" type="number" min="1" step="1" placeholder="по умолчанию 30">
               <div class="form-hint">
@@ -1461,6 +1597,75 @@
     ];
     const MEAL_DEF = Object.fromEntries(MEAL_KEYS.map(m => [m.key, m]));
 
+    // ---- Тип блюда внутри одного приёма пищи ----
+    // main  — основное (всегда показывается, всегда в корзине)
+    // addon — «в пару» (соус, гарнир) — всегда вместе с основным, всегда в корзине
+    // alt   — альтернатива — выбор «по кошельку»; в корзину попадает только выбранная
+    const DISH_KIND_DEF = {
+      main:  { id: "main",  label: "Основное",     short: "осн.",    css: "main"  },
+      addon: { id: "addon", label: "В пару",       short: "в пару",  css: "addon" },
+      alt:   { id: "alt",   label: "Альтернатива", short: "альт.",   css: "alt"   }
+    };
+    function normalizeKind(k) {
+      return (k === "addon" || k === "alt") ? k : "main";
+    }
+
+    // Привести содержимое meal-слота к плоскому списку блюд.
+    // Поддерживает три формата:
+    //   1) строка       → одно «основное» без ингредиентов
+    //   2) {title, ...} → одно «основное» (legacy data.json до v10)
+    //   3) {dishes: []} → новый формат (v10+); каждое блюдо имеет kind
+    function getDishes(meal) {
+      if (meal == null) return [];
+      if (typeof meal === "string") {
+        const t = meal.trim();
+        return t ? [{ kind: "main", title: t, ingredients: [], recipe: "", kbju: "", calories: null }] : [];
+      }
+      if (typeof meal !== "object") return [];
+      if (Array.isArray(meal.dishes)) {
+        return meal.dishes
+          .filter(d => d && typeof d === "object" && (d.title || "").toString().trim())
+          .map(d => ({
+            kind:        normalizeKind(d.kind),
+            title:       (d.title || "").toString().trim(),
+            ingredients: Array.isArray(d.ingredients) ? d.ingredients.filter(s => typeof s === "string") : [],
+            recipe:      typeof d.recipe === "string" ? d.recipe : "",
+            kbju:        typeof d.kbju === "string" ? d.kbju : "",
+            calories:    typeof d.calories === "number" ? d.calories : null
+          }));
+      }
+      if (meal.title) {
+        return [{
+          kind:        "main",
+          title:       meal.title,
+          ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : [],
+          recipe:      typeof meal.recipe === "string" ? meal.recipe : "",
+          kbju:        typeof meal.kbju === "string" ? meal.kbju : "",
+          calories:    typeof meal.calories === "number" ? meal.calories : null
+        }];
+      }
+      return [];
+    }
+
+    // ---- Хранилище выбора альтернативы (per-user) ----
+    function chosenAltKey(iso, mealKey) { return "chosen_alt_" + iso + "_" + mealKey; }
+    function getChosenAlt(iso, mealKey) { return localStorage.getItem(chosenAltKey(iso, mealKey)) || null; }
+    function setChosenAlt(iso, mealKey, title) {
+      if (title) localStorage.setItem(chosenAltKey(iso, mealKey), title);
+      else       localStorage.removeItem(chosenAltKey(iso, mealKey));
+    }
+    // Активная альтернатива для (iso, mealKey, alts[]): сохранённая если есть И есть в списке,
+    // иначе первая (Вариант А).
+    function getActiveAlt(iso, mealKey, alts) {
+      if (!alts || alts.length === 0) return null;
+      const stored = getChosenAlt(iso, mealKey);
+      if (stored) {
+        const found = alts.find(a => a.title === stored);
+        if (found) return found;
+      }
+      return alts[0];
+    }
+
     // Эффективный «порядок в дне» для одного блюда:
     // берётся meal.order, если задан; иначе — default_order по типу приёма пищи.
     function mealOrder(key, meal) {
@@ -1585,6 +1790,56 @@
         if (Object.keys(all[dateIso]).length === 0) delete all[dateIso];
         saveCoachOverrides(all);
       }
+    }
+
+    // Сохранить ОДНО блюдо внутри слота (date + mealKey).
+    // replaceIndex — индекс в массиве dishes, если редактируем; null если добавляем.
+    // slotOrderVal — кастомный порядок слота в дне (null = не трогать; пустой ввод формы тоже null).
+    // Автоконвертация legacy {title, ...} → {dishes: [...]} происходит здесь.
+    function setCoachDish(dateIso, mealKey, dish, replaceIndex, slotOrderVal) {
+      const all = getCoachOverrides();
+      if (!all[dateIso]) all[dateIso] = {};
+      const prevSlot = all[dateIso][mealKey];
+      const dishes = getDishes(prevSlot);
+      const prevOrder = (prevSlot && typeof prevSlot === "object" && typeof prevSlot.order === "number")
+                       ? prevSlot.order : null;
+
+      if (replaceIndex != null && replaceIndex >= 0 && replaceIndex < dishes.length) {
+        dishes[replaceIndex] = dish;
+      } else if (dish.kind === "main") {
+        // На слот допускается только одно «основное» — если уже есть, заменяем его.
+        const idx = dishes.findIndex(d => d.kind === "main");
+        if (idx >= 0) dishes[idx] = dish;
+        else          dishes.push(dish);
+      } else {
+        dishes.push(dish);
+      }
+
+      const newSlot = { dishes };
+      const finalOrder = (slotOrderVal != null && isFinite(slotOrderVal)) ? slotOrderVal : prevOrder;
+      if (finalOrder != null) newSlot.order = finalOrder;
+      all[dateIso][mealKey] = newSlot;
+      saveCoachOverrides(all);
+    }
+
+    // Удалить одно блюдо из слота; если слот пустеет — слот целиком; день пустеет — день целиком.
+    function deleteCoachDish(dateIso, mealKey, dishIndex) {
+      const all = getCoachOverrides();
+      const slot = all[dateIso] && all[dateIso][mealKey];
+      if (!slot) return;
+      const dishes = getDishes(slot);
+      if (dishIndex == null || dishIndex < 0 || dishIndex >= dishes.length) return;
+      dishes.splice(dishIndex, 1);
+      if (dishes.length === 0) {
+        delete all[dateIso][mealKey];
+        if (Object.keys(all[dateIso]).length === 0) delete all[dateIso];
+      } else {
+        const order = (typeof slot === "object" && typeof slot.order === "number") ? slot.order : null;
+        const newSlot = { dishes };
+        if (order != null) newSlot.order = order;
+        all[dateIso][mealKey] = newSlot;
+      }
+      saveCoachOverrides(all);
     }
 
     // Merge coach override + data.json fallback for a single date.
@@ -1956,7 +2211,7 @@
         det.appendChild(sum);
 
         sortedMealsOfDay(meals).forEach(({ meal, def }) => {
-          det.appendChild(renderMeal(meal, def));
+          det.appendChild(renderMeal(meal, def, iso));
         });
         container.appendChild(det);
       }
@@ -1969,56 +2224,135 @@
       }
     }
 
-    function renderMeal(meal, def) {
-      const isObj = meal && typeof meal === "object" && !Array.isArray(meal);
-      const title = isObj ? (meal.title || "—") : (meal || "—");
-      const hasDetails = isObj && (
-        (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) ||
-        (typeof meal.recipe === "string" && meal.recipe.trim()) ||
-        meal.kbju || meal.calories != null
-      );
-
-      if (!hasDetails) {
+    // ---------- Меню: рендер слота приёма пищи (с поддержкой main/addon/alt) ----------
+    function renderMeal(meal, def, iso) {
+      const dishes = getDishes(meal);
+      if (dishes.length === 0) {
+        // Слот без блюд (например, легаси-объект без title) — короткая строка
         const row = document.createElement("div");
         row.className = "meal";
         row.innerHTML =
           '<div class="icon">' + def.icon + '</div>' +
           '<div class="meal-name">' + def.name + '</div>' +
-          '<div>' + escHTML(title) + '</div>';
+          '<div>—</div>';
+        return row;
+      }
+
+      const fixed = dishes.filter(d => d.kind !== "alt");
+      const alts  = dishes.filter(d => d.kind === "alt");
+
+      const slot = document.createElement("div");
+      slot.className = "meal-slot";
+
+      let isFirstRendered = true;
+      fixed.forEach(dish => {
+        slot.appendChild(renderDishBlock(dish, def, isFirstRendered));
+        isFirstRendered = false;
+      });
+
+      if (alts.length > 0) {
+        const active = getActiveAlt(iso, def.key, alts);
+        slot.appendChild(renderAltPicker(iso, def.key, alts, active));
+        if (active) {
+          slot.appendChild(renderDishBlock(active, def, isFirstRendered));
+        }
+      }
+      return slot;
+    }
+
+    // Один блок блюда (свёрнутый/раскрывающийся), повторяющий старую вёрстку .meal-accordion.
+    function renderDishBlock(dish, def, isFirst) {
+      const title = (dish.title || "").trim() || "—";
+      const hasDetails =
+        (Array.isArray(dish.ingredients) && dish.ingredients.length > 0) ||
+        (typeof dish.recipe === "string" && dish.recipe.trim()) ||
+        dish.kbju || dish.calories != null;
+
+      // Без подробностей — короткая строка (.meal)
+      if (!hasDetails) {
+        const row = document.createElement("div");
+        row.className = "meal";
+        row.innerHTML =
+          '<div class="icon">' + (isFirst ? def.icon : "") + '</div>' +
+          '<div class="meal-name">' + (isFirst ? def.name : "") + '</div>' +
+          '<div class="meal-title-row">' +
+            '<span>' + escHTML(title) + '</span>' +
+            dishBadgeHTML(dish.kind) +
+          '</div>';
         return row;
       }
 
       const det = document.createElement("details");
-      det.className = "meal-accordion";
-
+      det.className = "meal-accordion" + (isFirst ? "" : " continued");
       const sum = document.createElement("summary");
       sum.innerHTML =
-        '<div class="icon">' + def.icon + '</div>' +
-        '<div class="meal-name">' + def.name + '</div>' +
-        '<div class="meal-title">' + escHTML(title) + '</div>' +
+        '<div class="icon">' + (isFirst ? def.icon : "") + '</div>' +
+        '<div class="meal-name">' + (isFirst ? def.name : "") + '</div>' +
+        '<div class="meal-title-row">' +
+          '<span class="meal-title">' + escHTML(title) + '</span>' +
+          dishBadgeHTML(dish.kind) +
+        '</div>' +
         '<div class="chev-sm"></div>';
       det.appendChild(sum);
 
       const body = document.createElement("div");
       body.className = "meal-details";
       let html = "";
-      if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
+      if (Array.isArray(dish.ingredients) && dish.ingredients.length > 0) {
         html += "<h4>Состав</h4><ul>" +
-          meal.ingredients.map(i => "<li>" + escHTML(i) + "</li>").join("") +
+          dish.ingredients.map(i => "<li>" + escHTML(i) + "</li>").join("") +
           "</ul>";
       }
-      if (typeof meal.recipe === "string" && meal.recipe.trim()) {
-        html += "<h4>Рецепт</h4><p>" + escHTML(meal.recipe) + "</p>";
+      if (typeof dish.recipe === "string" && dish.recipe.trim()) {
+        html += "<h4>Рецепт</h4><p>" + escHTML(dish.recipe) + "</p>";
       }
-      if (meal.kbju || meal.calories != null) {
+      if (dish.kbju || dish.calories != null) {
         const parts = [];
-        if (meal.kbju) parts.push(escHTML(meal.kbju));
-        if (meal.calories != null) parts.push("<strong>" + escHTML(meal.calories) + " ккал</strong>");
+        if (dish.kbju) parts.push(escHTML(dish.kbju));
+        if (dish.calories != null) parts.push("<strong>" + escHTML(dish.calories) + " ккал</strong>");
         html += '<div><span class="kbju">' + parts.join(" · ") + "</span></div>";
       }
       body.innerHTML = html;
       det.appendChild(body);
       return det;
+    }
+
+    function dishBadgeHTML(kind) {
+      if (kind === "addon") return '<span class="dish-badge addon">в пару</span>';
+      if (kind === "alt")   return '<span class="dish-badge alt">альт.</span>';
+      return "";
+    }
+
+    function renderAltPicker(iso, mealKey, alts, active) {
+      const box = document.createElement("div");
+      box.className = "alt-picker";
+      const h = document.createElement("div");
+      h.className = "alt-picker-h";
+      h.textContent = "Альтернатива — выбери одно:";
+      box.appendChild(h);
+
+      const groupName = "alt-" + iso + "-" + mealKey;
+      alts.forEach(d => {
+        const lbl = document.createElement("label");
+        lbl.className = "alt-opt";
+        const r = document.createElement("input");
+        r.type = "radio";
+        r.name = groupName;
+        r.value = d.title;
+        if (active && active.title === d.title) r.checked = true;
+        r.addEventListener("change", () => {
+          if (!r.checked) return;
+          setChosenAlt(iso, mealKey, d.title);
+          renderMenuTab();
+          renderShoppingTab();
+        });
+        const span = document.createElement("span");
+        span.textContent = d.title;
+        lbl.appendChild(r);
+        lbl.appendChild(span);
+        box.appendChild(lbl);
+      });
+      return box;
     }
 
     function renderWeekSwitcher(container, active, onChange) {
@@ -2054,6 +2388,7 @@
     function fmtQty(n) { return Math.round(n * 100) / 100; }
 
     // ----- Сбор всех использований ингредиентов из coach_overrides -----
+    // main + addon → всегда; alt → только выбранная пользователем (по умолчанию первая).
     function collectShoppingUsages() {
       const overrides = getEffectiveOverrides() || {};
       const out = [];
@@ -2063,20 +2398,31 @@
         if (isNaN(d)) return;
         const weekday = getDayOfWeekRu(d);
         MEAL_KEYS.forEach(m => {
-          const meal = day[m.key];
-          if (!meal || typeof meal !== "object" || !Array.isArray(meal.ingredients)) return;
-          meal.ingredients.forEach(raw => {
-            if (!raw || typeof raw !== "string") return;
-            const p = parseIngredient(raw);
-            if (!p.name) return;
-            out.push({
-              date: iso,
-              weekday,
-              mealKey: m.key,
-              raw,
-              name: p.name,
-              qty: p.qty,
-              unit: p.unit
+          const slot = day[m.key];
+          const dishes = getDishes(slot);
+          if (dishes.length === 0) return;
+
+          const alts = dishes.filter(x => x.kind === "alt");
+          const activeAlt = alts.length ? getActiveAlt(iso, m.key, alts) : null;
+
+          dishes.forEach(dish => {
+            if (dish.kind === "alt" && dish !== activeAlt) return;
+            if (!Array.isArray(dish.ingredients)) return;
+            dish.ingredients.forEach(raw => {
+              if (!raw || typeof raw !== "string") return;
+              const p = parseIngredient(raw);
+              if (!p.name) return;
+              out.push({
+                date: iso,
+                weekday,
+                mealKey: m.key,
+                raw,
+                name: p.name,
+                qty: p.qty,
+                unit: p.unit,
+                dishTitle: dish.title || "",
+                dishKind: dish.kind
+              });
             });
           });
         });
@@ -2446,8 +2792,11 @@
         when.className = "when";
         const d = new Date(u.date + "T00:00:00");
         const meta = MEAL_DEF[u.mealKey] || { icon: "", name: u.mealKey };
-        when.textContent = getDayOfWeekRu(d) + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) +
-                           " · " + meta.icon + " " + meta.name.toLowerCase();
+        let line = getDayOfWeekRu(d) + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) +
+                   " · " + meta.icon + " " + meta.name.toLowerCase();
+        if (u.dishKind === "addon")    line += " · в пару" + (u.dishTitle ? ": " + u.dishTitle : "");
+        else if (u.dishKind === "alt") line += " · альт.: " + (u.dishTitle || "");
+        when.textContent = line;
         const amount = document.createElement("div");
         amount.className = "amount";
         if (u.qty != null) {
@@ -2898,8 +3247,19 @@
     // ===========================================================
     const coachForm = {
       ingredients: [],
-      editing: null  // { date, meal } — какое блюдо сейчас редактируется
+      editing: null  // { date, meal, dishIndex } — какое блюдо сейчас редактируется
     };
+
+    function setKindRadio(kind) {
+      const k = normalizeKind(kind);
+      document.querySelectorAll('#cKind input[type="radio"]').forEach(i => {
+        i.checked = (i.value === k);
+      });
+    }
+    function getKindRadio() {
+      const checked = document.querySelector('#cKind input[type="radio"]:checked');
+      return normalizeKind(checked ? checked.value : "main");
+    }
 
     function bindCoachTriggers() {
       // 1) Маленькая ссылка внизу вкладки «Архив»
@@ -3009,31 +3369,41 @@
         const calories = calRaw === "" ? null : parseInt(calRaw, 10);
         const orderRaw = $("#cOrder").value.trim();
         const orderNum = orderRaw === "" ? null : parseInt(orderRaw, 10);
+        const kind = getKindRadio();
 
-        const obj = { title };
+        const dish = { kind, title };
         if (coachForm.ingredients.length > 0) {
-          obj.ingredients = coachForm.ingredients.slice();
+          dish.ingredients = coachForm.ingredients.slice();
         }
-        if (recipe) obj.recipe = recipe;
-        if (kbju) obj.kbju = kbju;
-        if (calories != null && isFinite(calories)) obj.calories = calories;
-        // Записываем order только если задан И отличается от дефолта типа приёма пищи
-        if (orderNum != null && isFinite(orderNum) && orderNum !== MEAL_DEF[meal].default_order) {
-          obj.order = orderNum;
+        if (recipe) dish.recipe = recipe;
+        if (kbju) dish.kbju = kbju;
+        if (calories != null && isFinite(calories)) dish.calories = calories;
+
+        // Кастомный порядок слота — пишем, только если задан И отличается от дефолта типа.
+        const slotOrderVal =
+          (orderNum != null && isFinite(orderNum) && orderNum !== MEAL_DEF[meal].default_order)
+            ? orderNum
+            : null;
+
+        // Решаем: заменяем ли существующее блюдо или добавляем новое.
+        // Если редактировали в этом же (date, meal) — заменяем по dishIndex.
+        // Если редактировали в ДРУГОМ слоте — удаляем оттуда и добавляем сюда новым.
+        let replaceIndex = null;
+        if (coachForm.editing) {
+          if (coachForm.editing.date === date && coachForm.editing.meal === meal &&
+              typeof coachForm.editing.dishIndex === "number") {
+            replaceIndex = coachForm.editing.dishIndex;
+          } else if (typeof coachForm.editing.dishIndex === "number") {
+            deleteCoachDish(coachForm.editing.date, coachForm.editing.meal, coachForm.editing.dishIndex);
+          }
         }
 
-        // Если редактировали другое (date, meal) — старую запись удаляем
-        if (coachForm.editing &&
-            (coachForm.editing.date !== date || coachForm.editing.meal !== meal)) {
-          deleteCoachMeal(coachForm.editing.date, coachForm.editing.meal);
-        }
-        setCoachMeal(date, meal, obj);
+        setCoachDish(date, meal, dish, replaceIndex, slotOrderVal);
 
-        toast("Сохранено");
+        toast(replaceIndex != null ? "Сохранено" : "Добавлено к приёму пищи");
         coachClearForm();
         renderCoachList();
         renderPublishUI();
-        // Обновляем зависимые вкладки
         renderMenuTab();
         renderShoppingTab();
         renderArchiveTab();
@@ -3374,20 +3744,30 @@
       $("#cOrder").value = "";
       $("#cIngName").value = "";
       $("#cIngWeight").value = "";
+      setKindRadio("main");
       updateOrderPlaceholder();
       renderCoachIngList();
     }
 
-    function populateCoachForm(dateIso, mealKey, meal) {
+    // Заполнить форму конкретным блюдом из слота (dishIndex — его индекс в массиве dishes).
+    function populateCoachForm(dateIso, mealKey, dish, dishIndex) {
       $("#cDate").value = dateIso;
       $("#cMeal").value = mealKey;
-      $("#cTitle").value = meal.title || "";
-      $("#cRecipe").value = meal.recipe || "";
-      $("#cKbju").value = meal.kbju || "";
-      $("#cCalories").value = meal.calories != null ? meal.calories : "";
-      $("#cOrder").value = (typeof meal.order === "number") ? meal.order : "";
-      coachForm.ingredients = Array.isArray(meal.ingredients) ? meal.ingredients.slice() : [];
-      coachForm.editing = { date: dateIso, meal: mealKey };
+      $("#cTitle").value = dish.title || "";
+      $("#cRecipe").value = dish.recipe || "";
+      $("#cKbju").value = dish.kbju || "";
+      $("#cCalories").value = dish.calories != null ? dish.calories : "";
+
+      // Порядок слота лежит на самом слоте (не на блюде); читаем из коуч-оверрайдов.
+      const all = getCoachOverrides();
+      const slot = all[dateIso] && all[dateIso][mealKey];
+      const slotOrderVal = (slot && typeof slot === "object" && typeof slot.order === "number")
+                           ? slot.order : null;
+      $("#cOrder").value = (slotOrderVal != null) ? slotOrderVal : "";
+
+      setKindRadio(dish.kind);
+      coachForm.ingredients = Array.isArray(dish.ingredients) ? dish.ingredients.slice() : [];
+      coachForm.editing = { date: dateIso, meal: mealKey, dishIndex };
       updateCoachDateInfo();
       updateOrderPlaceholder();
       renderCoachIngList();
@@ -3596,43 +3976,57 @@
         body.appendChild(empty);
       } else {
         meals.forEach(({ key, meal, def, order }) => {
-          body.appendChild(buildCoachMealRow(iso, key, meal, def, order, !localDay));
+          const dishes = getDishes(meal);
+          if (dishes.length === 0) return;
+          dishes.forEach((dish, dishIndex) => {
+            const isFirstInSlot = dishIndex === 0;
+            body.appendChild(
+              buildCoachMealRow(iso, key, meal, dish, dishIndex, def, order, !localDay, isFirstInSlot)
+            );
+          });
         });
       }
       det.appendChild(body);
       return det;
     }
 
-    function buildCoachMealRow(date, mealKey, meal, def, order, isDeletedDay) {
+    function buildCoachMealRow(date, mealKey, slot, dish, dishIndex, def, order, isDeletedDay, isFirstInSlot) {
       const row = document.createElement("div");
       row.className = "coach-meal";
-      const isObj = meal && typeof meal === "object";
-      const title = (isObj ? meal.title : meal) || "—";
-      const isCustomOrder = isObj && typeof meal.order === "number" && meal.order !== def.default_order;
-      const orderMark = isCustomOrder ? '<span class="order-badge">#' + order + '</span>' : '';
-      const sub = def.icon + " " + def.name +
-                  (isDeletedDay ? " · будет удалено" : "");
+      const title = (dish.title || "").trim() || "—";
+      const isCustomOrder = slot && typeof slot === "object" &&
+                            typeof slot.order === "number" && slot.order !== def.default_order;
+      const orderMark = (isCustomOrder && isFirstInSlot)
+        ? '<span class="order-badge">#' + order + '</span>' : '';
+
+      let kindBadge = "";
+      if (dish.kind === "addon")    kindBadge = '<span class="dish-badge-sm addon">в пару</span>';
+      else if (dish.kind === "alt") kindBadge = '<span class="dish-badge-sm alt">альт.</span>';
+
+      const subPrefix = isFirstInSlot ? (def.icon + " " + def.name) : "↳ к " + def.name.toLowerCase();
+      const sub = subPrefix + (isDeletedDay ? " · будет удалено" : "");
+
       const main = document.createElement("div");
       main.className = "cm-main";
       main.innerHTML =
-        '<div class="cm-title">' + escHTML(title) + orderMark + '</div>' +
+        '<div class="cm-title">' + escHTML(title) + kindBadge + orderMark + '</div>' +
         '<div class="cm-sub">' + escHTML(sub) + '</div>';
       row.appendChild(main);
 
-      // Для "удалится" — кнопки редактирования/удаления не нужны:
-      // блюдо уже отсутствует локально.
       if (!isDeletedDay) {
         const edit = document.createElement("button");
         edit.className = "cm-edit"; edit.type = "button"; edit.textContent = "Изм.";
-        edit.addEventListener("click", () => populateCoachForm(date, mealKey, isObj ? meal : { title: meal }));
+        edit.addEventListener("click", () => populateCoachForm(date, mealKey, dish, dishIndex));
         row.appendChild(edit);
 
         const del = document.createElement("button");
         del.className = "cm-del"; del.type = "button"; del.textContent = "×";
         del.addEventListener("click", () => {
           if (!confirm("Удалить «" + title + "»?")) return;
-          deleteCoachMeal(date, mealKey);
-          if (coachForm.editing && coachForm.editing.date === date && coachForm.editing.meal === mealKey) {
+          deleteCoachDish(date, mealKey, dishIndex);
+          if (coachForm.editing && coachForm.editing.date === date &&
+              coachForm.editing.meal === mealKey &&
+              coachForm.editing.dishIndex === dishIndex) {
             coachClearForm();
           }
           renderCoachList();
