@@ -587,6 +587,71 @@
       border-radius: 8px;
     }
     .ing-row.ing-row-alt .ing-text { font-size: 13px; }
+    .ing-addmore {
+      background: rgba(155, 89, 182, 0.12);
+      color: #6f3f9a;
+      border: 1px dashed rgba(155, 89, 182, 0.45);
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 4px;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .ing-addmore:hover { background: rgba(155, 89, 182, 0.22); }
+
+    /* Радио «Основной / Альтернативный» в форме коуча */
+    .ing-kind {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .ing-kind label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--page-bg);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      border: 1px solid var(--border);
+    }
+    .ing-kind label:has(input:checked) {
+      background: rgba(46, 162, 113, 0.08);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .ing-kind label:has(input[value="alt"]:checked) {
+      background: rgba(155, 89, 182, 0.10);
+      border-color: rgba(155, 89, 182, 0.5);
+      color: #6f3f9a;
+    }
+    .ing-kind input[type="radio"] {
+      width: 14px; height: 14px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Индикатор «добавляешь вариант в группу: ...» */
+    .ing-target {
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: rgba(155, 89, 182, 0.10);
+      border: 1px dashed rgba(155, 89, 182, 0.45);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #6f3f9a;
+      flex-wrap: wrap;
+    }
+    .ing-target b { color: #6f3f9a; }
+    .ing-target .btn { margin-left: auto; }
 
     /* SHOPPING */
     .shopping-header {
@@ -1509,10 +1574,18 @@
                 <input id="cIngWeight" type="text" placeholder="Вес: 50 г / 200 мл / 1 шт">
                 <button type="button" id="cIngAddBtn" class="btn btn--sm" aria-label="Добавить">+</button>
               </div>
+              <div id="cIngKind" class="ing-kind">
+                <label><input type="radio" name="cIngKind" value="main" checked> Основной</label>
+                <label><input type="radio" name="cIngKind" value="alt"> Альтернативный</label>
+              </div>
+              <div id="cIngTarget" class="ing-target" hidden>
+                <span>Добавляешь вариант в группу: <b id="cIngTargetName">—</b></span>
+                <button type="button" id="cIngTargetCancel" class="btn btn--ghost btn--sm">Отменить</button>
+              </div>
               <div class="form-hint">
-                Каждый ингредиент попадёт в список продуктов этой недели.
-                <br>Чтобы сделать <b>альтернативные</b> варианты (например, «субпродукты или куриное филе или жирная рыба»), перечисли их через
-                <b>«или»</b> или <b>«|»</b> в поле названия и один общий вес — участник выберет один вариант, в корзину пойдёт он.
+                <b>Основной</b> — обязательный ингредиент (попадёт в корзину как обычно).
+                <br><b>Альтернативный</b> — создаёт новую группу взаимозаменяемых вариантов (например, «курица / рыба / субпродукты — 170 г»).
+                Чтобы добавить ещё один вариант в уже созданную группу, нажми <b>«+ вариант»</b> у её строки в списке ниже.
               </div>
             </div>
 
@@ -2542,10 +2615,6 @@
       return { qty: n, unit: (m[2] || "").trim() || null };
     }
 
-    // Делители альтернативных вариантов внутри одного поля «название» в коуч-форме:
-    // " или " (русское, регистр-незав.) и вертикальная черта.
-    const ALT_NAME_RE = /\s+или\s+|\s*\|\s*/i;
-
     // Универсальный парс записи ингредиента: принимает строку (legacy) или объект {alt, options, weight, label}.
     // Возвращает нормализованную форму:
     //   { kind: "single"|"alt", label, qty, unit, options: [{name, qty, unit}, ...], raw }
@@ -2578,21 +2647,6 @@
         };
       }
       return null;
-    }
-
-    // Из полей коуч-формы (name, weight) → запись для coachForm.ingredients (string или объект-альт).
-    // Если в name перечислены варианты через " или " или "|" — формируем альт-группу.
-    function ingredientEntryFromForm(name, weight) {
-      const n = (name || "").trim();
-      const w = (weight || "").trim();
-      if (!n) return null;
-      const parts = n.split(ALT_NAME_RE).map(s => s.trim()).filter(Boolean);
-      if (parts.length > 1) {
-        const obj = { alt: true, options: parts };
-        if (w) obj.weight = w;
-        return obj;
-      }
-      return w ? (n + " — " + w) : n;
     }
 
     // Подпись для отображения записи ингредиента (в списке коуч-формы и т.п.).
@@ -3498,7 +3552,8 @@
     // ===========================================================
     const coachForm = {
       ingredients: [],
-      editing: null  // { date, meal, dishIndex } — какое блюдо сейчас редактируется
+      editing: null,        // { date, meal, dishIndex } — какое блюдо сейчас редактируется
+      addingToGroup: null   // null или { index: N } — индекс альт-группы в ingredients, в которую идёт следующий «+»
     };
 
     function setKindRadio(kind) {
@@ -3602,6 +3657,9 @@
       };
       $("#cIngName").addEventListener("keydown", onIngEnter);
       $("#cIngWeight").addEventListener("keydown", onIngEnter);
+      $("#cIngTargetCancel").addEventListener("click", () => {
+        cancelIngAddingMode();
+      });
 
       $("#cClearBtn").addEventListener("click", coachClearForm);
 
@@ -3950,14 +4008,79 @@
       $("#cDateInfo").textContent = label;
     }
 
+    // Радио «Основной / Альтернативный»
+    function getCIngKind() {
+      const checked = document.querySelector('input[name="cIngKind"]:checked');
+      return (checked && checked.value === "alt") ? "alt" : "main";
+    }
+    function setCIngKind(kind) {
+      document.querySelectorAll('input[name="cIngKind"]').forEach(i => {
+        i.checked = (i.value === (kind === "alt" ? "alt" : "main"));
+      });
+    }
+
+    // Включить режим «добавляю вариант к существующей альт-группе».
+    function startIngAddingMode(groupIndex) {
+      const entry = coachForm.ingredients[groupIndex];
+      if (!entry || typeof entry !== "object" || !entry.alt || !Array.isArray(entry.options)) return;
+      coachForm.addingToGroup = { index: groupIndex };
+      const targetBox = $("#cIngTarget");
+      $("#cIngTargetName").textContent = entry.options.join(" или ") + (entry.weight ? " — " + entry.weight : "");
+      targetBox.hidden = false;
+      // Заблокировать вес — он общий для группы; имя — пустое, ждём ввода
+      $("#cIngWeight").value = entry.weight || "";
+      $("#cIngWeight").readOnly = true;
+      $("#cIngName").value = "";
+      $("#cIngName").placeholder = "Добавить вариант к группе";
+      setCIngKind("alt");
+      $("#cIngName").focus();
+    }
+
+    // Выйти из режима добавления в группу.
+    function cancelIngAddingMode() {
+      coachForm.addingToGroup = null;
+      $("#cIngTarget").hidden = true;
+      $("#cIngWeight").readOnly = false;
+      $("#cIngWeight").value = "";
+      $("#cIngName").placeholder = "Название (например, Овсянка)";
+      $("#cIngName").value = "";
+      setCIngKind("main");
+    }
+
     function coachAddIngredient() {
-      const nameRaw = $("#cIngName").value;
-      const weightRaw = $("#cIngWeight").value;
-      const entry = ingredientEntryFromForm(nameRaw, weightRaw);
-      if (!entry) { $("#cIngName").focus(); return; }
+      const name = ($("#cIngName").value || "").trim();
+      const weight = ($("#cIngWeight").value || "").trim();
+      if (!name) { $("#cIngName").focus(); return; }
+
+      // Если активен режим «добавляю в группу» — подклеиваем к существующей альт-группе.
+      if (coachForm.addingToGroup) {
+        const idx = coachForm.addingToGroup.index;
+        const entry = coachForm.ingredients[idx];
+        if (entry && entry.alt && Array.isArray(entry.options)) {
+          const dup = entry.options.some(o => typeof o === "string" && o.trim().toLowerCase() === name.toLowerCase());
+          if (!dup) entry.options.push(name);
+          cancelIngAddingMode();
+          renderCoachIngList();
+          $("#cIngName").focus();
+          return;
+        }
+        // Если по какой-то причине целевая группа исчезла — выходим из режима и продолжаем как обычно.
+        cancelIngAddingMode();
+      }
+
+      const kind = getCIngKind();
+      let entry;
+      if (kind === "alt") {
+        entry = { alt: true, options: [name] };
+        if (weight) entry.weight = weight;
+      } else {
+        entry = weight ? (name + " — " + weight) : name;
+      }
       coachForm.ingredients.push(entry);
+
       $("#cIngName").value = "";
       $("#cIngWeight").value = "";
+      setCIngKind("main");
       $("#cIngName").focus();
       renderCoachIngList();
     }
@@ -3970,6 +4093,7 @@
         row.className = "ing-row";
         const isAlt = entry && typeof entry === "object" && entry.alt;
         if (isAlt) row.classList.add("ing-row-alt");
+
         const t = document.createElement("span");
         t.className = "ing-text";
         if (isAlt) {
@@ -3981,16 +4105,33 @@
         } else {
           t.textContent = ingredientToLabel(entry);
         }
+        row.appendChild(t);
+
+        if (isAlt) {
+          const addBtn = document.createElement("button");
+          addBtn.className = "ing-addmore";
+          addBtn.type = "button";
+          addBtn.title = "Добавить ещё вариант к этой группе";
+          addBtn.textContent = "+ вариант";
+          addBtn.addEventListener("click", () => startIngAddingMode(idx));
+          row.appendChild(addBtn);
+        }
+
         const del = document.createElement("button");
         del.className = "del";
         del.type = "button";
         del.textContent = "×";
+        del.title = isAlt ? "Удалить всю альт-группу" : "Удалить";
         del.addEventListener("click", () => {
           coachForm.ingredients.splice(idx, 1);
+          if (coachForm.addingToGroup) {
+            if (coachForm.addingToGroup.index === idx) cancelIngAddingMode();
+            else if (coachForm.addingToGroup.index > idx) coachForm.addingToGroup.index -= 1;
+          }
           renderCoachIngList();
         });
-        row.appendChild(t);
         row.appendChild(del);
+
         list.appendChild(row);
       });
     }
@@ -4003,9 +4144,8 @@
       $("#cKbju").value = "";
       $("#cCalories").value = "";
       $("#cOrder").value = "";
-      $("#cIngName").value = "";
-      $("#cIngWeight").value = "";
       setKindRadio("main");
+      cancelIngAddingMode();
       updateOrderPlaceholder();
       renderCoachIngList();
     }
@@ -4027,8 +4167,20 @@
       $("#cOrder").value = (slotOrderVal != null) ? slotOrderVal : "";
 
       setKindRadio(dish.kind);
-      coachForm.ingredients = Array.isArray(dish.ingredients) ? dish.ingredients.slice() : [];
+      // Глубокая копия ингредиентов: альт-объекты потенциально могут редактироваться
+      // («+ вариант», удаление) до сабмита — нельзя мутировать оригиналы из overrides.
+      coachForm.ingredients = Array.isArray(dish.ingredients)
+        ? dish.ingredients.map(ing => {
+            if (ing && typeof ing === "object") {
+              const copy = Object.assign({}, ing);
+              if (Array.isArray(ing.options)) copy.options = ing.options.slice();
+              return copy;
+            }
+            return ing;
+          })
+        : [];
       coachForm.editing = { date: dateIso, meal: mealKey, dishIndex };
+      cancelIngAddingMode();
       updateCoachDateInfo();
       updateOrderPlaceholder();
       renderCoachIngList();
