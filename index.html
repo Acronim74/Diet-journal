@@ -471,6 +471,340 @@
     .shop-item.from-menu .text { color: var(--bg-dark); }
     .shop-item.from-menu.checked .text { color: var(--muted); }
 
+    /* ============================================================
+       SHOPPING v2: режим, фильтр, карточки дней, разбор продукта
+       ============================================================ */
+    .seg-toggle {
+      display: flex;
+      background: var(--page-bg);
+      border-radius: 10px;
+      padding: 3px;
+      margin: 8px 0 10px;
+      gap: 2px;
+    }
+    .seg-toggle button {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 150ms, color 150ms;
+    }
+    .seg-toggle button.active {
+      background: var(--bg);
+      color: var(--accent);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .shop-filter {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 0 10px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .shop-filter button {
+      flex-shrink: 0;
+      background: var(--page-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 16px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 150ms, color 150ms, border-color 150ms, opacity 150ms;
+    }
+    .shop-filter button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .shop-filter button.past { opacity: 0.55; }
+    .shop-filter .sep {
+      flex-shrink: 0;
+      width: 1px;
+      align-self: stretch;
+      background: var(--border);
+      margin: 2px 2px;
+    }
+
+    .shop-section-title {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin: 16px 0 4px;
+      padding: 0 2px;
+    }
+    .shop-section-title:first-child { margin-top: 4px; }
+
+    details.shop-row {
+      border-bottom: 1px solid var(--border);
+    }
+    details.shop-row:last-child { border-bottom: 0; }
+    details.shop-row > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    details.shop-row > summary::-webkit-details-marker { display: none; }
+    details.shop-row > summary input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    details.shop-row .row-main {
+      flex: 1;
+      min-width: 0;
+    }
+    details.shop-row .row-name {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    details.shop-row .row-name b { word-break: break-word; }
+    details.shop-row .row-name .qty {
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    details.shop-row .row-name .qty .left {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+    details.shop-row .chips {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 5px;
+    }
+    details.shop-row .chip {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--page-bg);
+      padding: 2px 7px;
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+    details.shop-row .chip.past { opacity: 0.4; }
+    details.shop-row .chip.today {
+      background: var(--accent);
+      color: #fff;
+    }
+    details.shop-row .row-chev {
+      margin-left: 4px;
+      color: var(--muted);
+      transition: transform 200ms;
+      flex-shrink: 0;
+      font-size: 12px;
+      align-self: center;
+    }
+    details.shop-row[open] .row-chev { transform: rotate(180deg); }
+    details.shop-row.past-only { opacity: 0.6; }
+    details.shop-row.checked .row-name b {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    details.shop-row.checked .row-name .qty { color: var(--muted); }
+
+    details.shop-row .breakdown {
+      padding: 0 12px 12px 44px;
+      background: var(--page-bg);
+    }
+    details.shop-row .breakdown .usage {
+      display: flex;
+      gap: 8px;
+      padding: 5px 0;
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    details.shop-row .breakdown .usage:first-child { border-top: 0; padding-top: 8px; }
+    details.shop-row .breakdown .usage.past { opacity: 0.5; }
+    details.shop-row .breakdown .usage .when {
+      color: var(--muted);
+      flex: 1;
+      min-width: 0;
+    }
+    details.shop-row .breakdown .usage .amount {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    details.shop-row .breakdown .totals {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .shop-used-details {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--page-bg);
+    }
+    .shop-used-details > summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 13px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .shop-used-details > summary::-webkit-details-marker { display: none; }
+    .shop-used-details > summary::after {
+      content: "▾";
+      margin-left: auto;
+      transition: transform 200ms;
+      font-size: 11px;
+    }
+    .shop-used-details[open] > summary::after { transform: rotate(180deg); }
+    .shop-used-details .used-list {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Свой список (extras) */
+    .shop-extra-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .shop-extra-row:last-child { border-bottom: 0; }
+    .shop-extra-row input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .shop-extra-row .text {
+      flex: 1;
+      word-break: break-word;
+    }
+    .shop-extra-row.checked .text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .shop-extra-row .del {
+      background: none; border: 0;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .shop-extra-row .del:hover { color: var(--accent); }
+
+    /* By-day режим */
+    details.shop-day {
+      margin: 8px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    details.shop-day > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    details.shop-day > summary::-webkit-details-marker { display: none; }
+    details.shop-day .sd-date {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    details.shop-day .sd-date .today-mark {
+      margin-left: 8px;
+      font-size: 11px;
+      background: var(--accent);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 999px;
+      vertical-align: middle;
+      font-weight: 600;
+    }
+    details.shop-day .sd-meta {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    details.shop-day .sd-chev {
+      color: var(--muted);
+      transition: transform 200ms;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    details.shop-day[open] .sd-chev { transform: rotate(180deg); }
+    details.shop-day.past { opacity: 0.6; }
+    details.shop-day .sd-body { padding: 0 6px 6px; }
+    details.shop-day .meal-group {
+      margin: 4px 0 0;
+      padding: 8px 8px 4px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    details.shop-day .day-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+    }
+    details.shop-day .day-item input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    details.shop-day .day-item .di-text {
+      flex: 1;
+      word-break: break-word;
+    }
+    details.shop-day .day-item.checked .di-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    details.shop-day .day-item .di-qty {
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+    }
+    details.shop-day .day-item.checked .di-qty { color: var(--muted); }
+
     /* COACH MODE */
     .coach-link-wrap {
       text-align: center;
@@ -869,9 +1203,14 @@
             <div class="muted" id="shopCounter">Куплено: 0 / 0</div>
             <button class="btn btn--ghost btn--sm" id="shopReset">Сбросить</button>
           </div>
+          <div class="seg-toggle" id="shopMode">
+            <button type="button" data-mode="by_product">По продуктам</button>
+            <button type="button" data-mode="by_day">По дням</button>
+          </div>
+          <div class="shop-filter" id="shopFilter"></div>
           <div id="shopList"></div>
           <div class="shop-add">
-            <input id="shopInput" type="text" placeholder="Добавить продукт...">
+            <input id="shopInput" type="text" placeholder="Добавить свой продукт...">
             <button class="btn" id="shopAddBtn" aria-label="Добавить">+</button>
           </div>
         </div>
@@ -1271,67 +1610,6 @@
       return { iso, weekday, meals };
     }
 
-    function collectCoachIngredientsForWeek(weekNum) {
-      const start = getMarathonStart();
-      const overrides = getEffectiveOverrides();
-      const result = [];
-      for (let i = 0; i < 7; i++) {
-        const dayIdx = (weekNum - 1) * 7 + i;
-        if (dayIdx >= state.data.marathon.total_days) break;
-        const date = new Date(start.getTime() + dayIdx * 86400000);
-        const iso = isoDate(date);
-        const dayOverride = overrides[iso];
-        if (!dayOverride) continue;
-        MEAL_KEYS.forEach(m => {
-          const meal = dayOverride[m.key];
-          if (meal && typeof meal === "object" && Array.isArray(meal.ingredients)) {
-            meal.ingredients.forEach(s => { if (s && typeof s === "string") result.push(s); });
-          }
-        });
-      }
-      return result;
-    }
-
-    // Aggregate ingredient strings: "Овсянка — 50 г" + "Овсянка — 100 г" → "Овсянка — 150 г"
-    function aggregateIngredients(strings) {
-      const sums = new Map();   // key="name|unit" → { name, unit, sum }
-      const plain = new Set();  // names without weights
-      const seen = new Set();
-
-      const splitNameWeight = (s) => {
-        const m = s.match(/^\s*(.+?)\s*[—\u2014\-]\s*(.+?)\s*$/);
-        return m ? [m[1].trim(), m[2].trim()] : [s.trim(), null];
-      };
-      const splitNumberUnit = (w) => {
-        const m = w.match(/^([\d.,]+)\s*(.*)$/);
-        if (!m) return null;
-        const n = parseFloat(m[1].replace(",", "."));
-        if (!isFinite(n)) return null;
-        return { n, unit: (m[2] || "").trim() };
-      };
-
-      for (const s of strings) {
-        if (!s || typeof s !== "string") continue;
-        if (seen.has(s)) continue;
-        seen.add(s);
-        const [name, weight] = splitNameWeight(s);
-        if (!weight) { plain.add(name); continue; }
-        const nu = splitNumberUnit(weight);
-        if (!nu) { plain.add(name + " — " + weight); continue; }
-        const key = name.toLowerCase() + "|" + nu.unit.toLowerCase();
-        const prev = sums.get(key) || { name, unit: nu.unit, sum: 0 };
-        prev.sum += nu.n;
-        sums.set(key, prev);
-      }
-
-      const out = [];
-      for (const v of sums.values()) {
-        const rounded = Math.round(v.sum * 100) / 100;
-        out.push(v.name + " — " + rounded + (v.unit ? " " + v.unit : ""));
-      }
-      for (const p of plain) out.push(p);
-      return out.sort((a, b) => a.localeCompare(b, "ru"));
-    }
     function getCurrentDay() {
       const start = getMarathonStart();
       const today = startOfDay(new Date());
@@ -1391,6 +1669,7 @@
     // ===========================================================
     function init() {
       ensureMarathonStart();
+      migrateShoppingStorage();
       state.menuWeek = getCurrentWeek();
       state.archiveWeek = getCurrentWeek();
 
@@ -1754,110 +2033,609 @@
     }
 
     // ===========================================================
-    // ВКЛАДКА 3: Список продуктов
+    // ВКЛАДКА 3: Список продуктов (v2 — режимы, фильтр, разбор)
     // ===========================================================
-    function getShoppingState(weekNum) {
-      const w = getWeekByNumber(weekNum);
-      const base = (w && Array.isArray(w.shopping)) ? w.shopping : [];
-      let extras = [];
-      try { extras = JSON.parse(localStorage.getItem("shopping_extra_week_" + weekNum) || "[]"); } catch (e) {}
-      if (!Array.isArray(extras)) extras = [];
 
-      const auto = aggregateIngredients(collectCoachIngredientsForWeek(weekNum));
-
-      // Combined list (auto items already excluded if duplicated in base by exact match)
-      const baseSet = new Set(base.map(s => s.toLowerCase()));
-      const autoFiltered = auto.filter(s => !baseSet.has(s.toLowerCase()));
-
-      // checked is stored as array of STRINGS (item text). Legacy numeric arrays are reset.
-      let rawChecked = [];
-      try { rawChecked = JSON.parse(localStorage.getItem("shopping_checked_week_" + weekNum) || "[]"); } catch (e) {}
-      if (!Array.isArray(rawChecked)) rawChecked = [];
-      const checked = rawChecked.filter(s => typeof s === "string");
-
-      const items = [
-        ...base.map(t => ({ text: t, source: "base", extra: false })),
-        ...autoFiltered.map(t => ({ text: t, source: "auto", extra: false })),
-        ...extras.map(t => ({ text: t, source: "extra", extra: true }))
-      ];
-      const checkedSet = new Set(checked);
-      return { items, checkedSet, base, extras, auto: autoFiltered };
+    // ----- Парсинг ингредиентов -----
+    function parseIngredient(s) {
+      const m = (s || "").match(/^\s*(.+?)\s*[—\u2014\-]\s*(.+?)\s*$/);
+      if (!m) return { name: (s || "").trim(), qty: null, unit: null };
+      const name = m[1].trim();
+      const w = m[2].trim();
+      const nm = w.match(/^([\d.,]+)\s*(.*)$/);
+      if (!nm) return { name, qty: null, unit: w };
+      const n = parseFloat(nm[1].replace(",", "."));
+      if (!isFinite(n)) return { name, qty: null, unit: w };
+      return { name, qty: n, unit: (nm[2] || "").trim() || null };
     }
-    function saveShoppingExtras(weekNum, extras) {
-      localStorage.setItem("shopping_extra_week_" + weekNum, JSON.stringify(extras));
+    function shoppingKey(name, unit) {
+      return (name || "").toLowerCase().trim() + "|" + (unit || "").toLowerCase().trim();
     }
-    function saveShoppingChecked(weekNum, checkedSet) {
-      localStorage.setItem("shopping_checked_week_" + weekNum, JSON.stringify([...checkedSet]));
-    }
+    function fmtQty(n) { return Math.round(n * 100) / 100; }
 
-    function renderShoppingTab() {
-      const weekNum = getCurrentWeek();
-      const st = getShoppingState(weekNum);
-      const list = $("#shopList");
-      list.innerHTML = "";
-      const counter = $("#shopCounter");
-      const checkedCount = st.items.filter(it => st.checkedSet.has(it.text)).length;
-      counter.textContent = "Куплено: " + checkedCount + " / " + st.items.length +
-        " · неделя " + weekNum;
-
-      if (st.items.length === 0) {
-        list.innerHTML = '<div class="muted" style="padding:12px 0">Список пуст. Добавьте продукты ниже.</div>';
-        return;
-      }
-
-      st.items.forEach(item => {
-        const row = document.createElement("div");
-        const isChecked = st.checkedSet.has(item.text);
-        row.className = "shop-item" + (isChecked ? " checked" : "")
-          + (item.source === "auto" ? " from-menu" : "");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = isChecked;
-        cb.addEventListener("change", () => {
-          const checkedSet = new Set(st.checkedSet);
-          if (cb.checked) checkedSet.add(item.text); else checkedSet.delete(item.text);
-          saveShoppingChecked(weekNum, checkedSet);
-          renderShoppingTab();
-        });
-        const txt = document.createElement("span");
-        txt.className = "text";
-        txt.textContent = item.text;
-        row.appendChild(cb);
-        row.appendChild(txt);
-        if (item.source === "auto") {
-          const tag = document.createElement("span");
-          tag.className = "shop-tag";
-          tag.textContent = "из меню";
-          row.appendChild(tag);
-        }
-        if (item.extra) {
-          const del = document.createElement("button");
-          del.className = "del";
-          del.title = "Удалить";
-          del.textContent = "×";
-          del.addEventListener("click", () => {
-            const extras = st.extras.filter(t => t !== item.text);
-            saveShoppingExtras(weekNum, extras);
-            const checkedSet = new Set(st.checkedSet);
-            checkedSet.delete(item.text);
-            saveShoppingChecked(weekNum, checkedSet);
-            renderShoppingTab();
+    // ----- Сбор всех использований ингредиентов из coach_overrides -----
+    function collectShoppingUsages() {
+      const overrides = getEffectiveOverrides() || {};
+      const out = [];
+      Object.keys(overrides).sort().forEach(iso => {
+        const day = overrides[iso] || {};
+        const d = new Date(iso + "T00:00:00");
+        if (isNaN(d)) return;
+        const weekday = getDayOfWeekRu(d);
+        MEAL_KEYS.forEach(m => {
+          const meal = day[m.key];
+          if (!meal || typeof meal !== "object" || !Array.isArray(meal.ingredients)) return;
+          meal.ingredients.forEach(raw => {
+            if (!raw || typeof raw !== "string") return;
+            const p = parseIngredient(raw);
+            if (!p.name) return;
+            out.push({
+              date: iso,
+              weekday,
+              mealKey: m.key,
+              raw,
+              name: p.name,
+              qty: p.qty,
+              unit: p.unit
+            });
           });
-          row.appendChild(del);
+        });
+      });
+      return out;
+    }
+
+    // ----- Агрегация: одна строка на (name|unit) с разбором -----
+    function aggregateShoppingUsages(usages, todayIso) {
+      const map = new Map();
+      usages.forEach(u => {
+        const key = shoppingKey(u.name, u.unit);
+        let item = map.get(key);
+        if (!item) {
+          item = {
+            key,
+            name: u.name,
+            unit: u.unit || null,
+            totalQty: 0,
+            pastQty: 0,
+            futureQty: 0,
+            hasNumeric: false,
+            isPastOnly: true,
+            usages: []
+          };
+          map.set(key, item);
         }
-        list.appendChild(row);
+        const isPast = u.date < todayIso;
+        item.usages.push({ ...u, isPast });
+        if (!isPast) item.isPastOnly = false;
+        if (u.qty != null) {
+          item.hasNumeric = true;
+          item.totalQty += u.qty;
+          if (isPast) item.pastQty += u.qty; else item.futureQty += u.qty;
+        }
+      });
+      map.forEach(it => {
+        it.usages.sort((a, b) =>
+          a.date.localeCompare(b.date) ||
+          mealOrder(a.mealKey, null) - mealOrder(b.mealKey, null));
+      });
+      return [...map.values()].sort((a, b) => {
+        if (a.isPastOnly !== b.isPastOnly) return a.isPastOnly ? 1 : -1;
+        return a.name.localeCompare(b.name, "ru");
       });
     }
 
+    // ----- Скоуп (Все / Неделя / Дата) -----
+    function getShoppingFilter() {
+      try {
+        const f = JSON.parse(localStorage.getItem("shopping_filter") || "null");
+        if (f && f.type === "all") return f;
+        if (f && f.type === "week" && typeof f.week === "number") return f;
+        if (f && f.type === "date" && typeof f.iso === "string") return f;
+      } catch (e) {}
+      return { type: "all" };
+    }
+    function setShoppingFilter(f) { localStorage.setItem("shopping_filter", JSON.stringify(f)); }
+
+    function getShoppingMode() {
+      const m = localStorage.getItem("shopping_mode");
+      return (m === "by_day" || m === "by_product") ? m : "by_product";
+    }
+    function setShoppingMode(m) { localStorage.setItem("shopping_mode", m); }
+
+    function filterUsagesByScope(usages, scope) {
+      if (!scope || scope.type === "all") return usages;
+      if (scope.type === "week") {
+        return usages.filter(u => weekIndexForDate(u.date) === scope.week);
+      }
+      if (scope.type === "date") {
+        return usages.filter(u => u.date === scope.iso);
+      }
+      return usages;
+    }
+
+    function filterMatches(filter, other) {
+      if (!filter || !other) return false;
+      if (filter.type !== other.type) return false;
+      if (filter.type === "week") return filter.week === other.week;
+      if (filter.type === "date") return filter.iso === other.iso;
+      return true;
+    }
+
+    function scopeLabel(scope, allUsagesCount) {
+      if (!scope || scope.type === "all") return "Все продукты";
+      if (scope.type === "week") return "Неделя " + scope.week;
+      if (scope.type === "date") {
+        const d = new Date(scope.iso + "T00:00:00");
+        return getDayOfWeekRu(d) + " " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
+      }
+      return "";
+    }
+
+    // ----- Глобальные чекеды и extras (с миграцией со старых per-week ключей) -----
+    function getShoppingChecked() {
+      try {
+        const arr = JSON.parse(localStorage.getItem("shopping_checked") || "[]");
+        return new Set(Array.isArray(arr) ? arr.filter(s => typeof s === "string") : []);
+      } catch (e) { return new Set(); }
+    }
+    function saveShoppingChecked(set) {
+      localStorage.setItem("shopping_checked", JSON.stringify([...set]));
+    }
+    function getShoppingExtras() {
+      try {
+        const arr = JSON.parse(localStorage.getItem("shopping_extras") || "[]");
+        return Array.isArray(arr) ? arr.filter(s => typeof s === "string") : [];
+      } catch (e) { return []; }
+    }
+    function saveShoppingExtras(arr) {
+      localStorage.setItem("shopping_extras", JSON.stringify(arr));
+    }
+
+    function migrateShoppingStorage() {
+      // checked → global by name|unit key
+      if (localStorage.getItem("shopping_checked_migrated") !== "1") {
+        const acc = new Set(getShoppingChecked());
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("shopping_checked_week_")) {
+            try {
+              const arr = JSON.parse(localStorage.getItem(k) || "[]");
+              if (Array.isArray(arr)) {
+                arr.forEach(s => {
+                  if (typeof s !== "string") return;
+                  const p = parseIngredient(s);
+                  acc.add(shoppingKey(p.name, p.unit));
+                });
+              }
+            } catch (e) {}
+          }
+        }
+        if (acc.size) saveShoppingChecked(acc);
+        localStorage.setItem("shopping_checked_migrated", "1");
+      }
+      // extras → global единый список
+      if (localStorage.getItem("shopping_extras_migrated") !== "1") {
+        const acc = new Set(getShoppingExtras());
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("shopping_extra_week_")) {
+            try {
+              const arr = JSON.parse(localStorage.getItem(k) || "[]");
+              if (Array.isArray(arr)) arr.forEach(s => { if (typeof s === "string") acc.add(s); });
+            } catch (e) {}
+          }
+        }
+        if (acc.size) saveShoppingExtras([...acc]);
+        localStorage.setItem("shopping_extras_migrated", "1");
+      }
+    }
+
+    // ----- Рендер фильтра -----
+    function renderShoppingFilterBar(allUsages, filter, todayIso) {
+      const bar = $("#shopFilter");
+      bar.innerHTML = "";
+      const make = (label, scope, opts) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = label;
+        if (opts && opts.past) b.classList.add("past");
+        if (filterMatches(filter, scope)) b.classList.add("active");
+        b.addEventListener("click", () => {
+          setShoppingFilter(scope);
+          renderShoppingTab();
+        });
+        bar.appendChild(b);
+      };
+      const sep = () => {
+        const s = document.createElement("div");
+        s.className = "sep";
+        bar.appendChild(s);
+      };
+
+      make("Все", { type: "all" });
+
+      const dateSet = new Set(allUsages.map(u => u.date));
+      const { buckets, otherBefore, otherAfter, totalWeeks } = bucketDatesByWeek(dateSet);
+
+      let hasAnyWeek = false;
+      for (let w = 1; w <= totalWeeks; w++) {
+        const cnt = (buckets[w] || []).length;
+        if (cnt === 0) continue;
+        hasAnyWeek = true;
+        make("Нед. " + w, { type: "week", week: w });
+      }
+
+      const allDates = [...dateSet].sort();
+      if (allDates.length) {
+        sep();
+        allDates.forEach(iso => {
+          const d = new Date(iso + "T00:00:00");
+          if (isNaN(d)) return;
+          const label = getDayOfWeekRu(d).slice(0, 2).toLowerCase() + " " +
+                        pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
+          make(label, { type: "date", iso }, { past: iso < todayIso });
+        });
+      }
+    }
+
+    function setSegToggleActive(container, mode) {
+      [...container.querySelectorAll("button")].forEach(b => {
+        b.classList.toggle("active", b.dataset.mode === mode);
+      });
+    }
+
+    // ----- Основной рендер -----
+    function renderShoppingTab() {
+      const todayIso = isoDate(new Date());
+      const allUsages = collectShoppingUsages();
+      const filter = getShoppingFilter();
+      const mode = getShoppingMode();
+
+      renderShoppingFilterBar(allUsages, filter, todayIso);
+      const modeBox = $("#shopMode");
+      if (modeBox) setSegToggleActive(modeBox, mode);
+
+      const scopedUsages = filterUsagesByScope(allUsages, filter);
+      const aggregated = aggregateShoppingUsages(scopedUsages, todayIso);
+      const extras = getShoppingExtras();
+      const checked = getShoppingChecked();
+
+      // Счётчик
+      const allCount = aggregated.length + extras.length;
+      const checkedCount =
+        aggregated.filter(a => checked.has(a.key)).length +
+        extras.filter(e => checked.has(shoppingKey(e, ""))).length;
+      $("#shopCounter").textContent =
+        scopeLabel(filter) + " · куплено " + checkedCount + " / " + allCount;
+
+      const list = $("#shopList");
+      list.innerHTML = "";
+
+      if (allCount === 0) {
+        list.innerHTML = '<div class="muted" style="padding:14px 4px">' +
+          (filter.type === "all"
+            ? "Список покупок пуст. Заполни меню в режиме коуча или добавь свои продукты ниже."
+            : "В этом разрезе ничего нет. Выбери другую неделю/день или добавь свой продукт.") +
+          '</div>';
+        return;
+      }
+
+      if (mode === "by_product") {
+        renderShoppingByProduct(list, aggregated, extras, checked, todayIso, filter);
+      } else {
+        renderShoppingByDay(list, scopedUsages, extras, checked, todayIso, filter);
+      }
+    }
+
+    // ----- Режим «По продуктам» -----
+    function renderShoppingByProduct(list, aggregated, extras, checked, todayIso, filter) {
+      const active   = aggregated.filter(a => !a.isPastOnly);
+      const pastOnly = aggregated.filter(a =>  a.isPastOnly);
+
+      if (extras.length) {
+        list.appendChild(makeSectionTitle("Свой список"));
+        extras.forEach(text => list.appendChild(buildExtraRow(text, checked)));
+      }
+
+      if (active.length) {
+        if (extras.length || pastOnly.length) {
+          list.appendChild(makeSectionTitle("Нужно купить"));
+        }
+        active.forEach(item => list.appendChild(buildProductRow(item, checked, todayIso, filter)));
+      }
+
+      if (pastOnly.length) {
+        const det = document.createElement("details");
+        det.className = "shop-used-details";
+        const sum = document.createElement("summary");
+        sum.textContent = "Уже использовано · " + pastOnly.length;
+        det.appendChild(sum);
+        const body = document.createElement("div");
+        body.className = "used-list";
+        pastOnly.forEach(item => body.appendChild(buildProductRow(item, checked, todayIso, filter)));
+        det.appendChild(body);
+        list.appendChild(det);
+      }
+    }
+
+    function makeSectionTitle(text) {
+      const h = document.createElement("div");
+      h.className = "shop-section-title";
+      h.textContent = text;
+      return h;
+    }
+
+    function buildProductRow(item, checked, todayIso, filter) {
+      const det = document.createElement("details");
+      det.className = "shop-row";
+      if (item.isPastOnly) det.classList.add("past-only");
+      const isChecked = checked.has(item.key);
+      if (isChecked) det.classList.add("checked");
+
+      const summary = document.createElement("summary");
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = isChecked;
+      cb.addEventListener("click", e => e.stopPropagation());
+      cb.addEventListener("change", () => {
+        const set = getShoppingChecked();
+        if (cb.checked) set.add(item.key); else set.delete(item.key);
+        saveShoppingChecked(set);
+        renderShoppingTab();
+      });
+      summary.appendChild(cb);
+
+      const main = document.createElement("div");
+      main.className = "row-main";
+
+      const nameLine = document.createElement("div");
+      nameLine.className = "row-name";
+      const b = document.createElement("b");
+      b.textContent = item.name;
+      nameLine.appendChild(b);
+
+      if (item.hasNumeric) {
+        const qty = document.createElement("span");
+        qty.className = "qty";
+        const unit = item.unit ? " " + item.unit : "";
+        if (item.pastQty > 0 && item.futureQty > 0) {
+          qty.innerHTML = escHTML(fmtQty(item.futureQty) + unit) +
+            '<span class="left">из ' + escHTML(fmtQty(item.totalQty) + unit) + '</span>';
+        } else {
+          qty.textContent = fmtQty(item.totalQty) + unit;
+        }
+        nameLine.appendChild(qty);
+      }
+      main.appendChild(nameLine);
+
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      item.usages.slice(0, 6).forEach(u => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        if (u.date === todayIso) chip.classList.add("today");
+        else if (u.isPast) chip.classList.add("past");
+        const d = new Date(u.date + "T00:00:00");
+        chip.textContent = getDayOfWeekRu(d).slice(0, 2).toLowerCase() + " " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
+        chips.appendChild(chip);
+      });
+      if (item.usages.length > 6) {
+        const more = document.createElement("span");
+        more.className = "chip";
+        more.textContent = "+" + (item.usages.length - 6);
+        chips.appendChild(more);
+      }
+      main.appendChild(chips);
+      summary.appendChild(main);
+
+      const chev = document.createElement("span");
+      chev.className = "row-chev";
+      chev.textContent = "▾";
+      summary.appendChild(chev);
+
+      det.appendChild(summary);
+
+      // Разбор
+      const breakdown = document.createElement("div");
+      breakdown.className = "breakdown";
+      item.usages.forEach(u => {
+        const row = document.createElement("div");
+        row.className = "usage" + (u.isPast ? " past" : "");
+        const when = document.createElement("div");
+        when.className = "when";
+        const d = new Date(u.date + "T00:00:00");
+        const meta = MEAL_DEF[u.mealKey] || { icon: "", name: u.mealKey };
+        when.textContent = getDayOfWeekRu(d) + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) +
+                           " · " + meta.icon + " " + meta.name.toLowerCase();
+        const amount = document.createElement("div");
+        amount.className = "amount";
+        if (u.qty != null) {
+          amount.textContent = fmtQty(u.qty) + (u.unit ? " " + u.unit : "");
+        } else {
+          amount.textContent = u.unit || "—";
+        }
+        row.appendChild(when);
+        row.appendChild(amount);
+        breakdown.appendChild(row);
+      });
+      if (item.hasNumeric && item.pastQty > 0 && item.futureQty > 0) {
+        const totals = document.createElement("div");
+        totals.className = "totals";
+        const u = item.unit ? " " + item.unit : "";
+        totals.textContent = "Осталось купить: " + fmtQty(item.futureQty) + u +
+                             " · использовано: " + fmtQty(item.pastQty) + u +
+                             " · всего: " + fmtQty(item.totalQty) + u;
+        breakdown.appendChild(totals);
+      }
+      det.appendChild(breakdown);
+      return det;
+    }
+
+    function buildExtraRow(text, checked) {
+      const key = shoppingKey(text, "");
+      const isChecked = checked.has(key);
+      const row = document.createElement("div");
+      row.className = "shop-extra-row" + (isChecked ? " checked" : "");
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = isChecked;
+      cb.addEventListener("change", () => {
+        const set = getShoppingChecked();
+        if (cb.checked) set.add(key); else set.delete(key);
+        saveShoppingChecked(set);
+        renderShoppingTab();
+      });
+
+      const txt = document.createElement("span");
+      txt.className = "text";
+      txt.textContent = text;
+
+      const del = document.createElement("button");
+      del.className = "del";
+      del.title = "Удалить";
+      del.textContent = "×";
+      del.addEventListener("click", () => {
+        const next = getShoppingExtras().filter(t => t !== text);
+        saveShoppingExtras(next);
+        const set = getShoppingChecked();
+        set.delete(key);
+        saveShoppingChecked(set);
+        renderShoppingTab();
+      });
+
+      row.appendChild(cb);
+      row.appendChild(txt);
+      row.appendChild(del);
+      return row;
+    }
+
+    // ----- Режим «По дням» -----
+    function renderShoppingByDay(list, scopedUsages, extras, checked, todayIso, filter) {
+      if (extras.length) {
+        list.appendChild(makeSectionTitle("Свой список"));
+        extras.forEach(text => list.appendChild(buildExtraRow(text, checked)));
+      }
+
+      // Группируем usages по дате
+      const byDate = new Map();
+      scopedUsages.forEach(u => {
+        if (!byDate.has(u.date)) byDate.set(u.date, []);
+        byDate.get(u.date).push(u);
+      });
+      const dates = [...byDate.keys()].sort();
+      if (dates.length === 0) return;
+
+      if (extras.length) list.appendChild(makeSectionTitle("По дням"));
+
+      dates.forEach(iso => {
+        list.appendChild(buildDayCard(iso, byDate.get(iso), checked, todayIso));
+      });
+    }
+
+    function buildDayCard(iso, usages, checked, todayIso) {
+      const d = new Date(iso + "T00:00:00");
+      const det = document.createElement("details");
+      det.className = "shop-day";
+      const isPast = iso < todayIso;
+      const isToday = iso === todayIso;
+      if (isPast) det.classList.add("past");
+      if (isToday) { det.classList.add("today"); det.open = true; }
+
+      // Группируем внутри дня по приёму пищи
+      const byMeal = new Map();
+      usages.forEach(u => {
+        if (!byMeal.has(u.mealKey)) byMeal.set(u.mealKey, []);
+        byMeal.get(u.mealKey).push(u);
+      });
+      const totalQty = usages.length;
+
+      const sum = document.createElement("summary");
+      const dateBox = document.createElement("div");
+      dateBox.className = "sd-date";
+      dateBox.innerHTML = escHTML(getDayOfWeekRu(d) + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1)) +
+                          (isToday ? '<span class="today-mark">сегодня</span>' : '');
+      const meta = document.createElement("div");
+      meta.className = "sd-meta";
+      meta.textContent = totalQty + (totalQty === 1 ? " продукт" : (totalQty < 5 ? " продукта" : " продуктов"));
+      const chev = document.createElement("span");
+      chev.className = "sd-chev";
+      chev.textContent = "▾";
+      sum.appendChild(dateBox);
+      sum.appendChild(meta);
+      sum.appendChild(chev);
+      det.appendChild(sum);
+
+      const body = document.createElement("div");
+      body.className = "sd-body";
+
+      MEAL_KEYS.forEach(m => {
+        const items = byMeal.get(m.key);
+        if (!items || !items.length) return;
+        const title = document.createElement("div");
+        title.className = "meal-group";
+        title.textContent = m.icon + "  " + m.name;
+        body.appendChild(title);
+        items.forEach(u => body.appendChild(buildDayItem(u, checked)));
+      });
+
+      det.appendChild(body);
+      return det;
+    }
+
+    function buildDayItem(u, checked) {
+      const key = shoppingKey(u.name, u.unit);
+      const isChecked = checked.has(key);
+      const row = document.createElement("div");
+      row.className = "day-item" + (isChecked ? " checked" : "");
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = isChecked;
+      cb.addEventListener("change", () => {
+        const set = getShoppingChecked();
+        if (cb.checked) set.add(key); else set.delete(key);
+        saveShoppingChecked(set);
+        renderShoppingTab();
+      });
+      row.appendChild(cb);
+
+      const txt = document.createElement("span");
+      txt.className = "di-text";
+      txt.textContent = u.name;
+      row.appendChild(txt);
+
+      const qty = document.createElement("span");
+      qty.className = "di-qty";
+      if (u.qty != null) qty.textContent = fmtQty(u.qty) + (u.unit ? " " + u.unit : "");
+      else if (u.unit)   qty.textContent = u.unit;
+      else               qty.textContent = "";
+      row.appendChild(qty);
+
+      return row;
+    }
+
     function bindShoppingControls() {
+      // Режим
+      const modeBox = $("#shopMode");
+      if (modeBox) {
+        modeBox.addEventListener("click", e => {
+          const btn = e.target.closest("button[data-mode]");
+          if (!btn) return;
+          setShoppingMode(btn.dataset.mode);
+          renderShoppingTab();
+        });
+      }
+      // Добавить свой
       const addItem = () => {
         const inp = $("#shopInput");
         const v = inp.value.trim();
         if (!v) return;
-        const weekNum = getCurrentWeek();
-        const st = getShoppingState(weekNum);
-        if (!st.extras.includes(v) && !st.base.includes(v) && !st.auto.includes(v)) {
-          saveShoppingExtras(weekNum, [...st.extras, v]);
+        const extras = getShoppingExtras();
+        if (!extras.includes(v)) {
+          extras.push(v);
+          saveShoppingExtras(extras);
         }
         inp.value = "";
         renderShoppingTab();
@@ -1867,8 +2645,8 @@
         if (e.key === "Enter") { e.preventDefault(); addItem(); }
       });
       $("#shopReset").addEventListener("click", () => {
-        const weekNum = getCurrentWeek();
-        saveShoppingChecked(weekNum, new Set());
+        if (!confirm("Сбросить все отметки «куплено»?")) return;
+        saveShoppingChecked(new Set());
         renderShoppingTab();
         toast("Отметки сброшены");
       });
@@ -1952,28 +2730,30 @@
     }
 
     function renderArchiveShopping() {
-      const st = getShoppingState(state.archiveWeek);
       const list = $("#archShopList");
       list.innerHTML = "";
-      if (st.items.length === 0) {
+      const todayIso = isoDate(new Date());
+      const allUsages = collectShoppingUsages();
+      const weekUsages = filterUsagesByScope(allUsages, { type: "week", week: state.archiveWeek });
+      const aggregated = aggregateShoppingUsages(weekUsages, todayIso);
+      const checked = getShoppingChecked();
+
+      if (aggregated.length === 0) {
         list.innerHTML = '<div class="muted">Список на эту неделю пуст</div>';
         return;
       }
-      st.items.forEach(item => {
+      aggregated.forEach(item => {
+        const isChecked = checked.has(item.key);
         const row = document.createElement("div");
-        const isChecked = st.checkedSet.has(item.text);
-        row.className = "shop-item" + (isChecked ? " checked" : "")
-          + (item.source === "auto" ? " from-menu" : "");
+        row.className = "shop-item from-menu" + (isChecked ? " checked" : "");
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = isChecked;
         cb.disabled = true;
         const txt = document.createElement("span");
         txt.className = "text";
-        let suffix = "";
-        if (item.source === "auto") suffix = "  ·  из меню";
-        else if (item.extra) suffix = "  ·  доп.";
-        txt.textContent = item.text + suffix;
+        const unit = item.unit ? " " + item.unit : "";
+        txt.textContent = item.name + (item.hasNumeric ? " — " + fmtQty(item.totalQty) + unit : "");
         row.appendChild(cb);
         row.appendChild(txt);
         list.appendChild(row);
