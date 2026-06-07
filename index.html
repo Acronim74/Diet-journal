@@ -536,6 +536,58 @@
     .dish-badge-sm.addon { background: rgba(46, 162, 113, 0.18); color: #1f7d4d; }
     .dish-badge-sm.alt   { background: rgba(155, 89, 182, 0.18); color: #6f3f9a; }
 
+    /* Альтернативный ингредиент в составе блюда (radio внутри <li>) */
+    li.ing-alt-row {
+      list-style: none;
+      border: 1px dashed rgba(155, 89, 182, 0.35);
+      background: rgba(155, 89, 182, 0.06);
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin: 6px 0;
+    }
+    .ing-alt-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .ing-alt-label { color: var(--muted); font-weight: 600; }
+    .ing-alt-weight {
+      color: var(--bg-dark);
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    .ing-alt-opts {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 6px;
+    }
+    .ing-alt-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .ing-alt-opt + .ing-alt-opt { border-top: 1px dashed rgba(155, 89, 182, 0.2); }
+    .ing-alt-opt input[type="radio"] {
+      width: 16px; height: 16px;
+      accent-color: #7d4aaa;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Альт-ингредиент в списке коуч-формы */
+    .ing-row.ing-row-alt {
+      background: rgba(155, 89, 182, 0.06);
+      border-radius: 8px;
+    }
+    .ing-row.ing-row-alt .ing-text { font-size: 13px; }
+
     /* SHOPPING */
     .shopping-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -1457,7 +1509,11 @@
                 <input id="cIngWeight" type="text" placeholder="Вес: 50 г / 200 мл / 1 шт">
                 <button type="button" id="cIngAddBtn" class="btn btn--sm" aria-label="Добавить">+</button>
               </div>
-              <div class="form-hint">Каждый ингредиент попадёт в список продуктов этой недели</div>
+              <div class="form-hint">
+                Каждый ингредиент попадёт в список продуктов этой недели.
+                <br>Чтобы сделать <b>альтернативные</b> варианты (например, «субпродукты или куриное филе или жирная рыба»), перечисли их через
+                <b>«или»</b> или <b>«|»</b> в поле названия и один общий вес — участник выберет один вариант, в корзину пойдёт он.
+              </div>
             </div>
 
             <div>
@@ -1628,7 +1684,7 @@
           .map(d => ({
             kind:        normalizeKind(d.kind),
             title:       (d.title || "").toString().trim(),
-            ingredients: Array.isArray(d.ingredients) ? d.ingredients.filter(s => typeof s === "string") : [],
+            ingredients: filterIngredients(d.ingredients),
             recipe:      typeof d.recipe === "string" ? d.recipe : "",
             kbju:        typeof d.kbju === "string" ? d.kbju : "",
             calories:    typeof d.calories === "number" ? d.calories : null
@@ -1638,13 +1694,22 @@
         return [{
           kind:        "main",
           title:       meal.title,
-          ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : [],
+          ingredients: filterIngredients(meal.ingredients),
           recipe:      typeof meal.recipe === "string" ? meal.recipe : "",
           kbju:        typeof meal.kbju === "string" ? meal.kbju : "",
           calories:    typeof meal.calories === "number" ? meal.calories : null
         }];
       }
       return [];
+    }
+
+    // Допустимые записи ингредиента: строка ИЛИ объект альт-группы {alt:true, options:[], weight?, label?}
+    function filterIngredients(arr) {
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(it =>
+        typeof it === "string" ||
+        (it && typeof it === "object" && it.alt === true && Array.isArray(it.options) && it.options.some(o => typeof o === "string" && o.trim()))
+      );
     }
 
     // ---- Хранилище выбора альтернативы (per-user) ----
@@ -2246,7 +2311,7 @@
 
       let isFirstRendered = true;
       fixed.forEach(dish => {
-        slot.appendChild(renderDishBlock(dish, def, isFirstRendered));
+        slot.appendChild(renderDishBlock(dish, def, isFirstRendered, iso));
         isFirstRendered = false;
       });
 
@@ -2254,14 +2319,14 @@
         const active = getActiveAlt(iso, def.key, alts);
         slot.appendChild(renderAltPicker(iso, def.key, alts, active));
         if (active) {
-          slot.appendChild(renderDishBlock(active, def, isFirstRendered));
+          slot.appendChild(renderDishBlock(active, def, isFirstRendered, iso));
         }
       }
       return slot;
     }
 
     // Один блок блюда (свёрнутый/раскрывающийся), повторяющий старую вёрстку .meal-accordion.
-    function renderDishBlock(dish, def, isFirst) {
+    function renderDishBlock(dish, def, isFirst, iso) {
       const title = (dish.title || "").trim() || "—";
       const hasDetails =
         (Array.isArray(dish.ingredients) && dish.ingredients.length > 0) ||
@@ -2297,24 +2362,102 @@
 
       const body = document.createElement("div");
       body.className = "meal-details";
-      let html = "";
+
+      // «Состав» строим DOM-ом (нужны живые radio-обработчики у альт-групп)
       if (Array.isArray(dish.ingredients) && dish.ingredients.length > 0) {
-        html += "<h4>Состав</h4><ul>" +
-          dish.ingredients.map(i => "<li>" + escHTML(i) + "</li>").join("") +
-          "</ul>";
+        const h = document.createElement("h4");
+        h.textContent = "Состав";
+        body.appendChild(h);
+        body.appendChild(renderIngredientList(dish.ingredients, iso, def.key, title));
       }
       if (typeof dish.recipe === "string" && dish.recipe.trim()) {
-        html += "<h4>Рецепт</h4><p>" + escHTML(dish.recipe) + "</p>";
+        const h = document.createElement("h4");
+        h.textContent = "Рецепт";
+        const p = document.createElement("p");
+        p.textContent = dish.recipe;
+        body.appendChild(h);
+        body.appendChild(p);
       }
       if (dish.kbju || dish.calories != null) {
-        const parts = [];
-        if (dish.kbju) parts.push(escHTML(dish.kbju));
-        if (dish.calories != null) parts.push("<strong>" + escHTML(dish.calories) + " ккал</strong>");
-        html += '<div><span class="kbju">' + parts.join(" · ") + "</span></div>";
+        const wrap = document.createElement("div");
+        const span = document.createElement("span");
+        span.className = "kbju";
+        const left = dish.kbju ? escHTML(dish.kbju) : "";
+        const right = dish.calories != null
+          ? '<strong>' + escHTML(dish.calories) + ' ккал</strong>' : '';
+        const sep = (left && right) ? " · " : "";
+        span.innerHTML = left + sep + right;
+        wrap.appendChild(span);
+        body.appendChild(wrap);
       }
-      body.innerHTML = html;
       det.appendChild(body);
       return det;
+    }
+
+    // Состав блюда: <ul> со смешанными ингредиентами (строки + альт-группы с radio).
+    function renderIngredientList(ingredients, iso, mealKey, dishTitle) {
+      const ul = document.createElement("ul");
+      ingredients.forEach(entry => {
+        const parsed = parseIngredientEntry(entry);
+        if (!parsed) return;
+        const li = document.createElement("li");
+        if (parsed.kind === "single") {
+          li.textContent = typeof entry === "string" ? entry : ingredientToLabel(entry);
+          ul.appendChild(li);
+          return;
+        }
+        // alt-группа: маленькая шапка + radio-варианты + общий вес справа
+        li.className = "ing-alt-row";
+        const head = document.createElement("div");
+        head.className = "ing-alt-head";
+        const badge = document.createElement("span");
+        badge.className = "dish-badge alt";
+        badge.textContent = "альт.";
+        head.appendChild(badge);
+        if (parsed.label) {
+          const lbl = document.createElement("span");
+          lbl.className = "ing-alt-label";
+          lbl.textContent = parsed.label;
+          head.appendChild(lbl);
+        }
+        if (parsed.qty != null || parsed.unit) {
+          const w = document.createElement("span");
+          w.className = "ing-alt-weight";
+          const qtyText = parsed.qty != null ? fmtQty(parsed.qty) : "";
+          const unitText = parsed.unit ? (qtyText ? " " + parsed.unit : parsed.unit) : "";
+          w.textContent = qtyText + unitText;
+          head.appendChild(w);
+        }
+        li.appendChild(head);
+
+        const active = getChosenIngOption(iso, mealKey, dishTitle, parsed);
+        const opts = document.createElement("div");
+        opts.className = "ing-alt-opts";
+        const groupName = "ing-" + iso + "-" + mealKey + "-" + altGroupKey(parsed);
+        parsed.options.forEach(opt => {
+          const lbl = document.createElement("label");
+          lbl.className = "ing-alt-opt";
+          const r = document.createElement("input");
+          r.type = "radio";
+          r.name = groupName;
+          r.value = opt.name;
+          if (active && active.name === opt.name) r.checked = true;
+          r.addEventListener("change", () => {
+            if (!r.checked) return;
+            setChosenIngOption(iso, mealKey, dishTitle, parsed, opt.name);
+            renderMenuTab();
+            renderShoppingTab();
+          });
+          const span = document.createElement("span");
+          span.textContent = opt.name;
+          lbl.appendChild(r);
+          lbl.appendChild(span);
+          opts.appendChild(lbl);
+        });
+        li.appendChild(opts);
+        ul.appendChild(li);
+      });
+      return ul;
     }
 
     function dishBadgeHTML(kind) {
@@ -2387,6 +2530,109 @@
     }
     function fmtQty(n) { return Math.round(n * 100) / 100; }
 
+    // Парс отдельной строки веса вида "170 г" / "1 шт" / "200 мл".
+    function parseWeightStr(w) {
+      if (!w) return { qty: null, unit: null };
+      const s = String(w).trim();
+      if (!s) return { qty: null, unit: null };
+      const m = s.match(/^([\d.,]+)\s*(.*?)$/);
+      if (!m) return { qty: null, unit: s };
+      const n = parseFloat(m[1].replace(",", "."));
+      if (!isFinite(n)) return { qty: null, unit: s };
+      return { qty: n, unit: (m[2] || "").trim() || null };
+    }
+
+    // Делители альтернативных вариантов внутри одного поля «название» в коуч-форме:
+    // " или " (русское, регистр-незав.) и вертикальная черта.
+    const ALT_NAME_RE = /\s+или\s+|\s*\|\s*/i;
+
+    // Универсальный парс записи ингредиента: принимает строку (legacy) или объект {alt, options, weight, label}.
+    // Возвращает нормализованную форму:
+    //   { kind: "single"|"alt", label, qty, unit, options: [{name, qty, unit}, ...], raw }
+    function parseIngredientEntry(entry) {
+      if (typeof entry === "string") {
+        const p = parseIngredient(entry);
+        if (!p.name) return null;
+        return {
+          kind: "single",
+          raw: entry,
+          label: null,
+          qty: p.qty,
+          unit: p.unit,
+          options: [{ name: p.name, qty: p.qty, unit: p.unit }]
+        };
+      }
+      if (entry && typeof entry === "object" && entry.alt && Array.isArray(entry.options)) {
+        const w = parseWeightStr(entry.weight || "");
+        const opts = entry.options
+          .filter(n => typeof n === "string" && n.trim())
+          .map(n => ({ name: n.trim(), qty: w.qty, unit: w.unit }));
+        if (opts.length === 0) return null;
+        return {
+          kind: "alt",
+          raw: null,
+          label: typeof entry.label === "string" && entry.label.trim() ? entry.label.trim() : null,
+          qty: w.qty,
+          unit: w.unit,
+          options: opts
+        };
+      }
+      return null;
+    }
+
+    // Из полей коуч-формы (name, weight) → запись для coachForm.ingredients (string или объект-альт).
+    // Если в name перечислены варианты через " или " или "|" — формируем альт-группу.
+    function ingredientEntryFromForm(name, weight) {
+      const n = (name || "").trim();
+      const w = (weight || "").trim();
+      if (!n) return null;
+      const parts = n.split(ALT_NAME_RE).map(s => s.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        const obj = { alt: true, options: parts };
+        if (w) obj.weight = w;
+        return obj;
+      }
+      return w ? (n + " — " + w) : n;
+    }
+
+    // Подпись для отображения записи ингредиента (в списке коуч-формы и т.п.).
+    function ingredientToLabel(entry) {
+      if (typeof entry === "string") return entry;
+      if (entry && typeof entry === "object" && entry.alt && Array.isArray(entry.options)) {
+        const opts = entry.options.filter(s => typeof s === "string" && s.trim());
+        const w = entry.weight ? " — " + entry.weight : "";
+        return (entry.label ? entry.label + ": " : "") + opts.join(" или ") + w;
+      }
+      return "";
+    }
+
+    // ---- Хранилище выбора альтернативного варианта ингредиента (per-user) ----
+    // Ключ группы — стабильный относительно reorder вариантов: label если есть, иначе первый option.
+    function altGroupKey(parsed) {
+      if (!parsed || parsed.kind !== "alt") return "";
+      if (parsed.label) return "L:" + parsed.label;
+      return "O:" + (parsed.options[0] && parsed.options[0].name || "");
+    }
+    function chosenIngStorageKey(iso, mealKey, dishTitle, groupKey) {
+      return "chosen_ing_" + iso + "_" + mealKey + "_" + (dishTitle || "") + "_" + groupKey;
+    }
+    function getChosenIngOption(iso, mealKey, dishTitle, parsed) {
+      if (!parsed || parsed.kind !== "alt" || !parsed.options.length) return null;
+      const k = chosenIngStorageKey(iso, mealKey, dishTitle, altGroupKey(parsed));
+      const stored = localStorage.getItem(k);
+      if (stored) {
+        const found = parsed.options.find(o => o.name === stored);
+        if (found) return found;
+      }
+      return parsed.options[0];
+    }
+    function setChosenIngOption(iso, mealKey, dishTitle, parsed, optionName) {
+      if (!parsed || parsed.kind !== "alt") return;
+      const k = chosenIngStorageKey(iso, mealKey, dishTitle, altGroupKey(parsed));
+      if (optionName) localStorage.setItem(k, optionName);
+      else            localStorage.removeItem(k);
+    }
+
     // ----- Сбор всех использований ингредиентов из coach_overrides -----
     // main + addon → всегда; alt → только выбранная пользователем (по умолчанию первая).
     function collectShoppingUsages() {
@@ -2408,20 +2654,24 @@
           dishes.forEach(dish => {
             if (dish.kind === "alt" && dish !== activeAlt) return;
             if (!Array.isArray(dish.ingredients)) return;
-            dish.ingredients.forEach(raw => {
-              if (!raw || typeof raw !== "string") return;
-              const p = parseIngredient(raw);
-              if (!p.name) return;
+            dish.ingredients.forEach(entry => {
+              const parsed = parseIngredientEntry(entry);
+              if (!parsed) return;
+              const pick = parsed.kind === "alt"
+                ? getChosenIngOption(iso, m.key, dish.title || "", parsed)
+                : parsed.options[0];
+              if (!pick || !pick.name) return;
               out.push({
                 date: iso,
                 weekday,
                 mealKey: m.key,
-                raw,
-                name: p.name,
-                qty: p.qty,
-                unit: p.unit,
+                raw: typeof entry === "string" ? entry : null,
+                name: pick.name,
+                qty: pick.qty,
+                unit: pick.unit,
                 dishTitle: dish.title || "",
-                dishKind: dish.kind
+                dishKind: dish.kind,
+                ingAlt: parsed.kind === "alt"
               });
             });
           });
@@ -2799,10 +3049,11 @@
         when.textContent = line;
         const amount = document.createElement("div");
         amount.className = "amount";
+        const altMark = u.ingAlt ? " (альт.)" : "";
         if (u.qty != null) {
-          amount.textContent = fmtQty(u.qty) + (u.unit ? " " + u.unit : "");
+          amount.textContent = fmtQty(u.qty) + (u.unit ? " " + u.unit : "") + altMark;
         } else {
-          amount.textContent = u.unit || "—";
+          amount.textContent = (u.unit || "—") + altMark;
         }
         row.appendChild(when);
         row.appendChild(amount);
@@ -3700,11 +3951,11 @@
     }
 
     function coachAddIngredient() {
-      const n = $("#cIngName").value.trim();
-      const w = $("#cIngWeight").value.trim();
-      if (!n) { $("#cIngName").focus(); return; }
-      const text = w ? (n + " — " + w) : n;
-      coachForm.ingredients.push(text);
+      const nameRaw = $("#cIngName").value;
+      const weightRaw = $("#cIngWeight").value;
+      const entry = ingredientEntryFromForm(nameRaw, weightRaw);
+      if (!entry) { $("#cIngName").focus(); return; }
+      coachForm.ingredients.push(entry);
       $("#cIngName").value = "";
       $("#cIngWeight").value = "";
       $("#cIngName").focus();
@@ -3714,12 +3965,22 @@
     function renderCoachIngList() {
       const list = $("#cIngList");
       list.innerHTML = "";
-      coachForm.ingredients.forEach((text, idx) => {
+      coachForm.ingredients.forEach((entry, idx) => {
         const row = document.createElement("div");
         row.className = "ing-row";
+        const isAlt = entry && typeof entry === "object" && entry.alt;
+        if (isAlt) row.classList.add("ing-row-alt");
         const t = document.createElement("span");
         t.className = "ing-text";
-        t.textContent = text;
+        if (isAlt) {
+          const badge = document.createElement("span");
+          badge.className = "dish-badge-sm alt";
+          badge.textContent = "альт.";
+          t.appendChild(badge);
+          t.appendChild(document.createTextNode(" " + ingredientToLabel(entry)));
+        } else {
+          t.textContent = ingredientToLabel(entry);
+        }
         const del = document.createElement("button");
         del.className = "del";
         del.type = "button";
