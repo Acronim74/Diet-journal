@@ -1504,6 +1504,32 @@
         </div>
 
         <div class="card">
+          <h2 style="margin:0 0 8px">Параметры марафона</h2>
+          <div class="muted" style="font-size:13px; margin-bottom:12px">
+            Установи <b>даты начала и конца</b>. Когда обе даты опубликованы,
+            у всех участников «День 1» — это твой <b>start</b>, а длительность
+            марафона — это (<b>end − start + 1</b>) дней. Пока дат нет —
+            каждый участник считает свой марафон от даты первого открытия приложения.
+          </div>
+          <div class="grid-2">
+            <div>
+              <label for="cMarathonStart">Начало</label>
+              <input id="cMarathonStart" type="date">
+            </div>
+            <div>
+              <label for="cMarathonEnd">Окончание</label>
+              <input id="cMarathonEnd" type="date">
+            </div>
+          </div>
+          <div class="muted" id="cMarathonInfo" style="font-size:12px; margin-top:8px">—</div>
+          <div class="grid-2" style="margin-top:12px">
+            <button type="button" class="btn btn--ghost" id="cMarathonResetBtn">Сбросить поля</button>
+            <button type="button" class="btn" id="cMarathonPubBtn" disabled>Опубликовать даты</button>
+          </div>
+          <div class="muted" style="margin-top:8px; font-size:12px" id="cMarathonStatus">—</div>
+        </div>
+
+        <div class="card">
           <form id="coachForm" class="stack" autocomplete="off">
             <div class="grid-2">
               <div>
@@ -1850,13 +1876,55 @@
       setTimeout(() => t.remove(), 2400);
     }
 
+    // Если коуч задал в data.json ОБА конца марафона (start_date + end_date) — это
+    // официальные даты для всех. Иначе — fallback на личный marathon_start (legacy/
+    // первое открытие приложения), чтобы не ломать тех, кто уже начал «по-своему».
+    function coachHasMarathonDates() {
+      const m = (state.data && state.data.marathon) || {};
+      return !!(m.start_date && m.end_date);
+    }
+
     function getMarathonStart() {
+      const m = (state.data && state.data.marathon) || {};
+      if (coachHasMarathonDates()) {
+        const d = new Date(m.start_date);
+        if (!isNaN(d)) return startOfDay(d);
+      }
       const personal = localStorage.getItem("marathon_start");
       if (personal) {
         const d = new Date(personal);
         if (!isNaN(d)) return startOfDay(d);
       }
-      return startOfDay(new Date(state.data.marathon.start_date));
+      if (m.start_date) {
+        const d = new Date(m.start_date);
+        if (!isNaN(d)) return startOfDay(d);
+      }
+      return startOfDay(new Date());
+    }
+
+    function getMarathonTotalDays() {
+      const m = (state.data && state.data.marathon) || {};
+      if (coachHasMarathonDates()) {
+        const s = new Date(m.start_date);
+        const e = new Date(m.end_date);
+        if (!isNaN(s) && !isNaN(e)) {
+          const days = Math.floor((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
+          if (days >= 1) return days;
+        }
+      }
+      return (m.total_days && m.total_days > 0) ? m.total_days : 21;
+    }
+
+    function getMarathonEnd() {
+      const m = (state.data && state.data.marathon) || {};
+      if (coachHasMarathonDates()) {
+        const d = new Date(m.end_date);
+        if (!isNaN(d)) return startOfDay(d);
+      }
+      const start = getMarathonStart();
+      const end = new Date(start);
+      end.setDate(end.getDate() + getMarathonTotalDays() - 1);
+      return startOfDay(end);
     }
 
     function ensureMarathonStart() {
@@ -1991,7 +2059,7 @@
       const start = getMarathonStart();
       const today = startOfDay(new Date());
       const diff = Math.floor((today - start) / 86400000) + 1;
-      return Math.max(1, Math.min(diff, state.data.marathon.total_days));
+      return Math.max(1, Math.min(diff, getMarathonTotalDays()));
     }
     function getCurrentWeek() {
       const start = getMarathonStart();
@@ -2059,6 +2127,7 @@
       bindCoachTriggers();
       bindCoachForm();
       bindPublishControls();
+      bindMarathonMeta();
       renderAll();
       maybeOnboard();
 
@@ -2078,7 +2147,7 @@
     function renderHeader() {
       $("#appTitle").textContent = state.data.marathon.title;
       $("#dayIndicator").textContent =
-        "День " + getCurrentDay() + " из " + state.data.marathon.total_days;
+        "День " + getCurrentDay() + " из " + getMarathonTotalDays();
     }
 
     // ===========================================================
@@ -2133,7 +2202,7 @@
     }
 
     function renderDaysRow() {
-      const total = state.data.marathon.total_days;
+      const total = getMarathonTotalDays();
       const cur = getCurrentDay();
       const row = $("#daysRow");
       row.innerHTML = "";
@@ -2147,7 +2216,7 @@
       }
     }
     function renderProgressBar() {
-      const total = state.data.marathon.total_days;
+      const total = getMarathonTotalDays();
       const cur = getCurrentDay();
       const pct = Math.round((cur / total) * 100);
       $("#progressFill").style.width = pct + "%";
@@ -2306,7 +2375,7 @@
     function renderDayCardsForWeek(container, weekNum, highlightToday) {
       const start = getMarathonStart();
       const todayIso = isoDate(new Date());
-      const totalDays = state.data.marathon.total_days;
+      const totalDays = getMarathonTotalDays();
       let anyRendered = false;
 
       for (let i = 0; i < 7; i++) {
@@ -3296,7 +3365,7 @@
     function renderArchiveTable() {
       const tbody = $("#archiveTable tbody");
       tbody.innerHTML = "";
-      const total = state.data.marathon.total_days;
+      const total = getMarathonTotalDays();
       const start = getMarathonStart();
       const todayIso = isoDate(new Date());
 
@@ -3396,7 +3465,7 @@
       const r = $("#print-report");
       const name = localStorage.getItem("user_name") || "Участник";
       const start = getMarathonStart();
-      const total = state.data.marathon.total_days;
+      const total = getMarathonTotalDays();
       const end = new Date(start.getTime() + (total - 1) * 86400000);
       const entries = [];
       let firstW = null, lastW = null;
@@ -3610,6 +3679,7 @@
       coachClearForm();
       renderCoachList();
       renderPublishUI();
+      renderMarathonMeta();
 
       // Пере-рендерим вкладки, поскольку флаг isCoachDevice мог только что включиться
       renderMenuTab(); renderShoppingTab(); renderArchiveTab();
@@ -3739,6 +3809,7 @@
         setGhToken(v);
         toast(v ? "Токен сохранён" : "Токен удалён");
         renderPublishUI();
+        updateMarathonInfo();
       });
 
       $("#cPublishBtn").addEventListener("click", publishMenuToGitHub);
@@ -3949,6 +4020,144 @@
       }
     }
 
+    // ----- Параметры марафона (даты): отображение и публикация -----
+    function renderMarathonMeta() {
+      const m = (state.data && state.data.marathon) || {};
+      const sIn = $("#cMarathonStart");
+      const eIn = $("#cMarathonEnd");
+      // Подставляем уже опубликованные даты (если есть) в поля формы только при первой
+      // отрисовке либо если поля пусты — чтобы не сбивать незавершённое редактирование.
+      if (!sIn.value && m.start_date) sIn.value = m.start_date;
+      if (!eIn.value && m.end_date)   eIn.value = m.end_date;
+
+      const status = $("#cMarathonStatus");
+      if (m.start_date && m.end_date) {
+        const days = getMarathonTotalDays();
+        status.textContent =
+          "Опубликовано: " + formatIsoRu(m.start_date) + " → " + formatIsoRu(m.end_date) +
+          " (" + days + " " + plural(days, "день", "дня", "дней") + ")";
+      } else {
+        status.textContent = "Даты ещё не опубликованы — у участников действует личный «День 1».";
+      }
+      updateMarathonInfo();
+    }
+
+    function formatIsoRu(iso) {
+      const d = new Date(iso + "T00:00:00");
+      if (isNaN(d)) return iso;
+      return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear();
+    }
+    function plural(n, one, few, many) {
+      const a = Math.abs(n) % 100;
+      const b = a % 10;
+      if (a >= 11 && a <= 19) return many;
+      if (b === 1) return one;
+      if (b >= 2 && b <= 4)  return few;
+      return many;
+    }
+
+    function updateMarathonInfo() {
+      const sIso = $("#cMarathonStart").value;
+      const eIso = $("#cMarathonEnd").value;
+      const info = $("#cMarathonInfo");
+      const btn  = $("#cMarathonPubBtn");
+      let valid = false;
+      if (sIso && eIso) {
+        const s = new Date(sIso);
+        const e = new Date(eIso);
+        if (!isNaN(s) && !isNaN(e)) {
+          const days = Math.floor((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
+          if (days >= 1) {
+            valid = true;
+            info.textContent =
+              "Длительность: " + days + " " + plural(days, "день", "дня", "дней") +
+              " (" + formatIsoRu(sIso) + " → " + formatIsoRu(eIso) + ")";
+          } else {
+            info.textContent = "Окончание должно быть не раньше начала.";
+          }
+        } else {
+          info.textContent = "Некорректная дата.";
+        }
+      } else if (sIso || eIso) {
+        info.textContent = "Заполни обе даты.";
+      } else {
+        info.textContent = "—";
+      }
+      btn.disabled = !valid || !getGhToken();
+    }
+
+    async function publishMarathonToGitHub() {
+      const token = getGhToken();
+      if (!token) { toast("Сначала сохрани токен"); return; }
+      const sIso = $("#cMarathonStart").value;
+      const eIso = $("#cMarathonEnd").value;
+      if (!sIso || !eIso) { toast("Заполни обе даты"); return; }
+      const s = new Date(sIso), e = new Date(eIso);
+      if (isNaN(s) || isNaN(e)) { alert("Некорректные даты"); return; }
+      const days = Math.floor((startOfDay(e) - startOfDay(s)) / 86400000) + 1;
+      if (days < 1) { alert("Окончание не может быть раньше начала"); return; }
+
+      // Предупреждение, если есть локальные блюда за пределами нового окна.
+      const local = getCoachOverrides();
+      const outside = Object.keys(local).filter(iso => iso < sIso || iso > eIso);
+      if (outside.length > 0) {
+        const ok = confirm(
+          "В коуч-меню есть " + outside.length + " " +
+          plural(outside.length, "день", "дня", "дней") +
+          " вне окна марафона (" + outside.slice(0, 3).join(", ") +
+          (outside.length > 3 ? "…" : "") + ").\n\n" +
+          "Они останутся опубликованными, но у участников будут отображаться как " +
+          "«до старта» / «после марафона». Опубликовать даты всё равно?"
+        );
+        if (!ok) return;
+      }
+
+      const btn = $("#cMarathonPubBtn");
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Публикую…";
+
+      try {
+        const { data: remoteData, sha } = await ghFetchData(token);
+        if (!remoteData.marathon || typeof remoteData.marathon !== "object") {
+          remoteData.marathon = {};
+        }
+        remoteData.marathon.start_date = sIso;
+        remoteData.marathon.end_date   = eIso;
+        remoteData.marathon.total_days = days;
+        if (!remoteData.marathon.title) remoteData.marathon.title = "Марафон";
+
+        const commitMsg = "Coach: marathon dates " + sIso + " → " + eIso + " (" + days + "d)";
+        const commitSha = await ghPutData(token, remoteData, sha, commitMsg);
+
+        state.data.marathon = remoteData.marathon;
+        rememberPublishTs(commitSha);
+        toast("Даты марафона опубликованы");
+
+        renderMarathonMeta();
+        renderHeader();
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        alert("Ошибка публикации дат марафона:\n\n" + err.message +
+              "\n\nЕсли это конфликт SHA — обнови страницу и попробуй ещё раз.");
+      } finally {
+        btn.textContent = origText;
+        updateMarathonInfo();
+      }
+    }
+
+    function bindMarathonMeta() {
+      $("#cMarathonStart").addEventListener("change", updateMarathonInfo);
+      $("#cMarathonEnd").addEventListener("change", updateMarathonInfo);
+      $("#cMarathonResetBtn").addEventListener("click", () => {
+        $("#cMarathonStart").value = "";
+        $("#cMarathonEnd").value = "";
+        renderMarathonMeta();
+      });
+      $("#cMarathonPubBtn").addEventListener("click", publishMarathonToGitHub);
+    }
+
     // UTF-8 ↔ base64 (atob/btoa напрямую работают только с latin-1)
     function utf8ToB64(str) {
       return btoa(unescape(encodeURIComponent(str)));
@@ -3973,7 +4182,7 @@
       const start = getMarathonStart();
       const diff = Math.floor((startOfDay(d) - start) / 86400000);
       let label = wd + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear();
-      if (diff >= 0 && diff < state.data.marathon.total_days) {
+      if (diff >= 0 && diff < getMarathonTotalDays()) {
         label += " · день " + (diff + 1) + ", неделя " + (Math.floor(diff / 7) + 1) + " марафона";
       } else if (diff < 0) {
         label += " · до старта марафона";
@@ -4170,13 +4379,13 @@
       const start = getMarathonStart();
       const diff = Math.floor((startOfDay(d) - start) / 86400000);
       if (diff < 0) return -1;
-      const totalWeeks = Math.max(1, Math.ceil((state.data.marathon.total_days || 21) / 7));
+      const totalWeeks = Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
       const w = Math.floor(diff / 7) + 1;
       return Math.min(w, totalWeeks + 1);
     }
 
     function totalMarathonWeeks() {
-      return Math.max(1, Math.ceil((state.data.marathon.total_days || 21) / 7));
+      return Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
     }
 
     function bucketDatesByWeek(dateSet) {
