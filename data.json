@@ -1,8 +1,9 @@
 {
   "marathon": {
     "title": "Марафон −10",
-    "total_days": 21,
-    "start_date": "2025-06-01"
+    "total_days": 420,
+    "start_date": "2025-05-07",
+    "end_date": "2026-06-30"
   },
   "coach_overrides": {
     "2026-06-07": {
