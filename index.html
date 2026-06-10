@@ -1257,6 +1257,64 @@
       font-weight: 500;
     }
 
+    /* Coach: сворачиваемые секции страницы */
+    .coach-panel {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .coach-panel > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+    }
+    .coach-panel > summary::-webkit-details-marker { display: none; }
+    .coach-panel-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 15px;
+      min-width: 0;
+    }
+    .coach-panel-hint {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
+      max-width: 45%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 1;
+    }
+    .coach-panel-hint.warn { color: var(--accent); }
+    .coach-panel-hint.ok { color: #6ec46e; }
+    .coach-panel > summary .chev {
+      width: 8px; height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 150ms;
+      flex-shrink: 0;
+      margin-left: 4px;
+    }
+    .coach-panel[open] > summary .chev { transform: rotate(-135deg); }
+    .coach-panel[open] > summary {
+      border-bottom: 1px solid var(--border);
+    }
+    .coach-panel-body { padding: 14px 16px; }
+    .coach-panel-body > h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .coach-panel-body .form-hint:first-child,
+    .coach-panel-body > .muted:first-child { margin-top: 0; }
+
     /* Coach: per-day accordion */
     .coach-day {
       background: var(--page-bg);
@@ -1627,38 +1685,52 @@
         <div class="card coach-header">
           <div>
             <h2 style="margin:0">Режим коуча</h2>
-            <div class="muted" style="margin-top:2px">Заполнение меню по датам</div>
+            <div class="muted" style="margin-top:2px">Марафон, меню, задания, публикация</div>
           </div>
           <button class="btn btn--ghost btn--sm" id="coachExitBtn">Выйти</button>
         </div>
 
-        <div class="card">
-          <h2 style="margin:0 0 8px">Параметры марафона</h2>
-          <div class="muted" style="font-size:13px; margin-bottom:12px">
-            Установи <b>даты начала и конца</b>. Когда обе даты опубликованы,
-            у всех участников «День 1» — это твой <b>start</b>, а длительность
-            марафона — это (<b>end − start + 1</b>) дней. Пока дат нет —
-            каждый участник считает свой марафон от даты первого открытия приложения.
-          </div>
-          <div class="grid-2">
-            <div>
-              <label for="cMarathonStart">Начало</label>
-              <input id="cMarathonStart" type="date">
+        <!-- 1. Параметры марафона -->
+        <details class="coach-panel">
+          <summary>
+            <span class="coach-panel-title">Параметры марафона</span>
+            <span class="coach-panel-hint" id="coachHintMarathon"></span>
+            <span class="chev"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <div class="muted" style="font-size:13px; margin-bottom:12px">
+              Установи <b>даты начала и конца</b>. Когда обе даты опубликованы,
+              у всех участников «День 1» — это твой <b>start</b>, а длительность
+              марафона — это (<b>end − start + 1</b>) дней. Пока дат нет —
+              каждый участник считает свой марафон от даты первого открытия приложения.
             </div>
-            <div>
-              <label for="cMarathonEnd">Окончание</label>
-              <input id="cMarathonEnd" type="date">
+            <div class="grid-2">
+              <div>
+                <label for="cMarathonStart">Начало</label>
+                <input id="cMarathonStart" type="date">
+              </div>
+              <div>
+                <label for="cMarathonEnd">Окончание</label>
+                <input id="cMarathonEnd" type="date">
+              </div>
             </div>
+            <div class="muted" id="cMarathonInfo" style="font-size:12px; margin-top:8px">—</div>
+            <div class="grid-2" style="margin-top:12px">
+              <button type="button" class="btn btn--ghost" id="cMarathonResetBtn">Сбросить поля</button>
+              <button type="button" class="btn" id="cMarathonPubBtn" disabled>Опубликовать даты</button>
+            </div>
+            <div class="muted" style="margin-top:8px; font-size:12px" id="cMarathonStatus">—</div>
           </div>
-          <div class="muted" id="cMarathonInfo" style="font-size:12px; margin-top:8px">—</div>
-          <div class="grid-2" style="margin-top:12px">
-            <button type="button" class="btn btn--ghost" id="cMarathonResetBtn">Сбросить поля</button>
-            <button type="button" class="btn" id="cMarathonPubBtn" disabled>Опубликовать даты</button>
-          </div>
-          <div class="muted" style="margin-top:8px; font-size:12px" id="cMarathonStatus">—</div>
-        </div>
+        </details>
 
-        <div class="card">
+        <!-- 2. Создание меню -->
+        <details class="coach-panel">
+          <summary>
+            <span class="coach-panel-title">Создание меню</span>
+            <span class="coach-panel-hint">форма блюда</span>
+            <span class="chev"></span>
+          </summary>
+          <div class="coach-panel-body">
           <form id="coachForm" class="stack" autocomplete="off">
             <div class="grid-2">
               <div>
@@ -1749,54 +1821,44 @@
               <button type="submit" class="btn">Сохранить блюдо</button>
             </div>
           </form>
-        </div>
-
-        <div class="card">
-          <div class="shopping-header">
-            <h2 style="margin:0">Заполненные блюда</h2>
-            <span class="muted" id="coachListCount">—</span>
           </div>
-          <div id="coachList"></div>
-          <div class="grid-2" style="margin-top:12px">
-            <button class="btn btn--outline" id="cExportBtn">Скачать JSON</button>
-            <button class="btn btn--ghost" id="cWipeBtn">Удалить все</button>
-          </div>
-        </div>
+        </details>
 
-        <div class="card">
-          <h2>Публикация для всех участников</h2>
-          <div class="muted" style="font-size:13px; margin-bottom:10px">
-            Заполняй меню сколько угодно — оно остаётся <b>черновиком</b> на твоём устройстве.
-            На сервер день уходит <b>только когда ты нажмёшь «Опубл.»</b> на нужном дне
-            (или «Опубликовать всё» — синхронизировать все изменения одним коммитом
-            в <code id="pubRepoName">data.json</code>). Токен хранится только на этом устройстве.
-          </div>
-
-          <div>
-            <label for="cToken">GitHub Personal Access Token</label>
-            <div style="display:flex; gap:8px; align-items:stretch">
-              <input id="cToken" type="password" placeholder="github_pat_..." autocomplete="off" style="flex:1">
-              <button type="button" class="btn btn--ghost btn--sm" id="cTokenShow" aria-label="Показать">👁</button>
+        <!-- 3. Заполненные блюда и публикация -->
+        <details class="coach-panel">
+          <summary>
+            <span class="coach-panel-title">Заполненные блюда и публикация</span>
+            <span class="coach-panel-hint" id="coachHintDishes"></span>
+            <span class="chev"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <div class="muted" style="font-size:13px; margin-bottom:10px">
+              Меню остаётся <b>черновиком</b> на устройстве. На сервер день уходит по кнопке
+              <b>«Опубл.»</b> у нужного дня или <b>«Опубликовать всё»</b> ниже
+              (в <code id="pubRepoName">data.json</code>).
             </div>
-            <div class="form-hint" id="cTokenStatus">Токен не задан</div>
+            <div class="shopping-header">
+              <h3 style="margin:0">Список по дням</h3>
+              <span class="muted" id="coachListCount">—</span>
+            </div>
+            <div id="coachList"></div>
+            <button type="button" class="btn btn--block" id="cPublishBtn" disabled style="margin-top:12px">Опубликовать всё</button>
+            <div class="muted" style="margin-top:10px; font-size:12px" id="cPublishInfo">—</div>
+            <div class="muted" style="margin-top:4px; font-size:12px" id="cPublishStatus">Ещё не публиковалось</div>
           </div>
+        </details>
 
-          <div class="grid-2" style="margin-top:12px">
-            <button type="button" class="btn btn--ghost" id="cTokenSaveBtn">Сохранить токен</button>
-            <button type="button" class="btn" id="cPublishBtn" disabled>Опубликовать всё</button>
-          </div>
-
-          <div class="muted" style="margin-top:10px; font-size:12px" id="cPublishInfo">—</div>
-          <div class="muted" style="margin-top:4px; font-size:12px" id="cPublishStatus">Ещё не публиковалось</div>
-        </div>
-
-        <div class="card">
-          <h2 style="margin:0 0 8px">Задания участникам</h2>
-          <div class="muted" style="font-size:13px; margin-bottom:12px">
-            Создавай задания и задавай расписание. Они появляются у участников
-            на странице «Задания» и в карточке «Сегодня». Публикуются отдельной
-            кнопкой внизу этой карточки.
-          </div>
+        <!-- 4. Задания: создание и публикация -->
+        <details class="coach-panel">
+          <summary>
+            <span class="coach-panel-title">Задания: создание и публикация</span>
+            <span class="coach-panel-hint" id="coachHintTasks"></span>
+            <span class="chev"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <div class="muted" style="font-size:13px; margin-bottom:12px">
+              Задания появляются у участников на странице «Задания» и в карточке «Сегодня».
+            </div>
 
           <form id="taskForm" class="stack" autocomplete="off">
             <div class="grid-2">
@@ -1845,7 +1907,61 @@
 
           <div class="muted" style="margin-top:10px; font-size:12px" id="taskPublishInfo">—</div>
           <button type="button" class="btn btn--block" id="tPublishBtn" disabled style="margin-top:8px">Опубликовать задания</button>
-        </div>
+          </div>
+        </details>
+
+        <!-- 5. GitHub API-токен -->
+        <details class="coach-panel">
+          <summary>
+            <span class="coach-panel-title">GitHub API-токен</span>
+            <span class="coach-panel-hint" id="coachHintToken"></span>
+            <span class="chev"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <div class="muted" style="font-size:13px; margin-bottom:10px">
+              Токен нужен для публикации в репозиторий. Хранится <b>только на этом устройстве</b>.
+            </div>
+            <div>
+              <label for="cToken">Personal Access Token</label>
+              <div style="display:flex; gap:8px; align-items:stretch">
+                <input id="cToken" type="password" placeholder="github_pat_..." autocomplete="off" style="flex:1">
+                <button type="button" class="btn btn--ghost btn--sm" id="cTokenShow" aria-label="Показать">👁</button>
+              </div>
+              <div class="form-hint" id="cTokenStatus">Токен не задан</div>
+            </div>
+            <button type="button" class="btn btn--block" id="cTokenSaveBtn" style="margin-top:12px">Сохранить токен</button>
+          </div>
+        </details>
+
+        <!-- 6. Резервная копия -->
+        <details class="coach-panel">
+          <summary>
+            <span class="coach-panel-title">Резервная копия</span>
+            <span class="coach-panel-hint">меню и задания</span>
+            <span class="chev"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <h3>Меню (черновик)</h3>
+            <div class="grid-2" style="margin-bottom:12px">
+              <button type="button" class="btn btn--outline" id="cExportBtn">Скачать меню</button>
+              <button type="button" class="btn btn--ghost" id="cImportBtn">Загрузить меню</button>
+            </div>
+            <input type="file" accept=".json,application/json" id="cImportFile" hidden>
+
+            <h3>Задания (черновик)</h3>
+            <div class="grid-2" style="margin-bottom:12px">
+              <button type="button" class="btn btn--outline" id="tExportBtn">Скачать задания</button>
+              <button type="button" class="btn btn--ghost" id="tImportBtn">Загрузить задания</button>
+            </div>
+            <input type="file" accept=".json,application/json" id="tImportFile" hidden>
+
+            <h3 style="margin-top:16px">Очистка</h3>
+            <div class="grid-2">
+              <button type="button" class="btn btn--ghost" id="cWipeBtn">Удалить всё меню</button>
+              <button type="button" class="btn btn--ghost" id="tWipeBtn">Удалить все задания</button>
+            </div>
+          </div>
+        </details>
       </section>
     </main>
 
@@ -4188,16 +4304,26 @@
       });
 
       $("#cExportBtn").addEventListener("click", () => {
-        const data = getCoachOverrides();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "menu-overrides-" + isoDate(new Date()) + ".json";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        toast("Файл сохранён");
+        downloadJson(getCoachOverrides(), "menu-overrides-" + isoDate(new Date()) + ".json");
+        toast("Меню сохранено");
+      });
+
+      $("#cImportBtn").addEventListener("click", () => $("#cImportFile").click());
+      $("#cImportFile").addEventListener("change", e => {
+        readJsonFile(e.target, data => {
+          if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new Error("Ожидается объект { дата: { приём: блюдо } }");
+          }
+          if (!confirm("Заменить локальное меню загруженным файлом?")) return;
+          saveCoachOverrides(data);
+          coachClearForm();
+          renderCoachList();
+          renderPublishUI();
+          renderMenuTab();
+          renderShoppingTab();
+          renderArchiveTab();
+          toast("Меню загружено");
+        });
       });
 
       $("#cWipeBtn").addEventListener("click", () => {
@@ -4209,8 +4335,66 @@
         renderMenuTab();
         renderShoppingTab();
         renderArchiveTab();
-        toast("Очищено");
+        toast("Меню очищено");
       });
+
+      $("#tExportBtn").addEventListener("click", () => {
+        downloadJson(getCoachTasks(), "tasks-" + isoDate(new Date()) + ".json");
+        toast("Задания сохранены");
+      });
+
+      $("#tImportBtn").addEventListener("click", () => $("#tImportFile").click());
+      $("#tImportFile").addEventListener("change", e => {
+        readJsonFile(e.target, data => {
+          if (!Array.isArray(data)) throw new Error("Ожидается массив заданий");
+          if (!confirm("Заменить локальные задания загруженным файлом?")) return;
+          saveCoachTasks(data);
+          taskClearForm();
+          renderCoachTasks();
+          renderTasksTab();
+          renderTodayCard();
+          toast("Задания загружены");
+        });
+      });
+
+      $("#tWipeBtn").addEventListener("click", () => {
+        if (!confirm("Удалить все задания? Это нельзя отменить.")) return;
+        saveCoachTasks([]);
+        taskClearForm();
+        renderCoachTasks();
+        renderTasksTab();
+        renderTodayCard();
+        toast("Задания удалены");
+      });
+    }
+
+    function downloadJson(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    function readJsonFile(input, onOk) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          onOk(data);
+        } catch (err) {
+          console.error(err);
+          alert("Не удалось прочитать JSON:\n\n" + (err.message || err));
+        }
+        input.value = "";
+      };
+      reader.onerror = () => { alert("Ошибка чтения файла"); input.value = ""; };
+      reader.readAsText(file);
     }
 
     // ---------- GitHub publish ----------
@@ -4286,6 +4470,29 @@
       $("#cPublishStatus").textContent = last
         ? "Последняя публикация: " + last
         : "Ещё не публиковалось";
+
+      // Подсказки в свёрнутых заголовках секций
+      const dishHint = $("#coachHintDishes");
+      const localDays = Object.keys(local).length;
+      if (pendingDays > 0) {
+        dishHint.textContent = localDays + " дн., " + pendingDays + " не опубл.";
+        dishHint.className = "coach-panel-hint warn";
+      } else if (localDays > 0) {
+        dishHint.textContent = localDays + " дн., опубликовано";
+        dishHint.className = "coach-panel-hint ok";
+      } else {
+        dishHint.textContent = "пусто";
+        dishHint.className = "coach-panel-hint";
+      }
+
+      const tokenHint = $("#coachHintToken");
+      if (token) {
+        tokenHint.textContent = "сохранён";
+        tokenHint.className = "coach-panel-hint ok";
+      } else {
+        tokenHint.textContent = "не задан";
+        tokenHint.className = "coach-panel-hint warn";
+      }
     }
 
     function countMeals(o) {
@@ -4455,13 +4662,18 @@
       if (!eIn.value && m.end_date)   eIn.value = m.end_date;
 
       const status = $("#cMarathonStatus");
+      const hint = $("#coachHintMarathon");
       if (m.start_date && m.end_date) {
         const days = getMarathonTotalDays();
         status.textContent =
           "Опубликовано: " + formatIsoRu(m.start_date) + " → " + formatIsoRu(m.end_date) +
           " (" + days + " " + plural(days, "день", "дня", "дней") + ")";
+        hint.textContent = formatIsoRu(m.start_date) + " → " + formatIsoRu(m.end_date);
+        hint.className = "coach-panel-hint ok";
       } else {
         status.textContent = "Даты ещё не опубликованы — у участников действует личный «День 1».";
+        hint.textContent = "не опубликовано";
+        hint.className = "coach-panel-hint";
       }
       updateMarathonInfo();
     }
@@ -4790,6 +5002,18 @@
         info.textContent = "Заданий нет.";
       }
       $("#tPublishBtn").disabled = !getGhToken() || !dirty;
+
+      const taskHint = $("#coachHintTasks");
+      if (dirty) {
+        taskHint.textContent = tasks.length + ", не опубл.";
+        taskHint.className = "coach-panel-hint warn";
+      } else if (tasks.length > 0) {
+        taskHint.textContent = tasks.length + ", опубликовано";
+        taskHint.className = "coach-panel-hint ok";
+      } else {
+        taskHint.textContent = "нет";
+        taskHint.className = "coach-panel-hint";
+      }
     }
 
     async function publishTasksToGitHub() {
