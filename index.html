@@ -69,7 +69,31 @@
       height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
     }
     #topBar .title { font-size: 16px; font-weight: 500; }
+    #topBar .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
     #topBar .day-indicator { font-size: 13px; color: var(--accent); font-weight: 500; }
+    .header-refresh {
+      background: none;
+      border: 0;
+      color: #8e8ea3;
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: color 150ms, background 150ms;
+    }
+    .header-refresh:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .header-refresh.spinning {
+      animation: spin 0.8s linear infinite;
+      pointer-events: none;
+      color: var(--accent);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* CONTENT */
     main#content {
@@ -1516,7 +1540,10 @@
   <div id="app">
     <header id="topBar">
       <div class="title" id="appTitle">Марафон</div>
-      <div class="day-indicator" id="dayIndicator">—</div>
+      <div class="header-right">
+        <button type="button" class="header-refresh" id="appRefreshBtn" title="Обновить данные" aria-label="Обновить">↻</button>
+        <div class="day-indicator" id="dayIndicator">—</div>
+      </div>
     </header>
 
     <main id="content">
@@ -1665,6 +1692,16 @@
         <div class="card">
           <h2>Список продуктов недели</h2>
           <div id="archShopList"></div>
+        </div>
+
+        <div class="card">
+          <h2>Обновление данных</h2>
+          <div class="muted" id="syncStatus" style="font-size:13px; margin-bottom:10px">—</div>
+          <button type="button" class="btn btn--block" id="btnForceRefresh">Обновить меню и задания</button>
+          <div class="form-hint" style="margin-top:8px">
+            При открытии приложение само запрашивает свежие данные с сервера.
+            Если меню не появилось — нажми эту кнопку (или ↻ в шапке).
+          </div>
         </div>
 
         <div class="card">
@@ -2507,23 +2544,128 @@
     }
 
     // ===========================================================
-    // Загрузка данных
+    // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    async function loadData() {
+    const APP_BUILD = 19;
+    let swReloadPending = false;
+    let appInited = false;
+
+    function countMenuDays(data) {
+      const o = (data && data.coach_overrides) || {};
+      return Object.keys(o).length;
+    }
+
+    function formatSyncTime(iso) {
+      if (!iso) return "никогда";
+      const d = new Date(iso);
+      if (isNaN(d)) return "—";
+      return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + " " +
+             pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    }
+
+    function updateSyncStatus() {
+      const el = $("#syncStatus");
+      if (!el) return;
+      const last = localStorage.getItem("data_last_sync");
+      const days = state.data ? countMenuDays(state.data) : 0;
+      const tasks = (state.data && Array.isArray(state.data.tasks)) ? state.data.tasks.length : 0;
+      let line = "Меню: <b>" + days + "</b> дн.";
+      if (tasks) line += " · заданий: <b>" + tasks + "</b>";
+      if (last) {
+        line += "<br>Последняя синхронизация: " + formatSyncTime(last);
+      } else {
+        line += "<br><span style=\"color:var(--accent)\">Ещё не синхронизировалось с сервером</span>";
+      }
+      el.innerHTML = line;
+    }
+
+    async function fetchAppData(opts) {
+      const quiet = opts && opts.quiet;
       try {
-        const res = await fetch("data.json?" + Date.now());
+        const res = await fetch("./data.json?_=" + Date.now(), {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" }
+        });
         if (!res.ok) throw new Error("HTTP " + res.status);
         state.data = await res.json();
+        localStorage.setItem("data_last_sync", new Date().toISOString());
+        updateSyncStatus();
+        if (!quiet) toast("Данные обновлены");
+        return true;
       } catch (err) {
-        try {
-          const res2 = await fetch("data.json");
-          state.data = await res2.json();
-        } catch (e2) {
-          console.warn("fetch недоступен, используем fallbackData", e2);
+        console.warn("fetchAppData:", err);
+        if (!state.data) {
+          try {
+            const res2 = await fetch("./data.json", { cache: "no-store" });
+            if (res2.ok) {
+              state.data = await res2.json();
+              updateSyncStatus();
+              if (!quiet) toast("Загружены кэшированные данные");
+              return true;
+            }
+          } catch (e2) {}
           state.data = window.fallbackData;
+          updateSyncStatus();
         }
+        if (!quiet) toast("Нет сети — показаны сохранённые данные");
+        return false;
       }
-      init();
+    }
+
+    function rerenderAfterDataRefresh() {
+      renderHeader();
+      renderAll();
+      if (isCoachDevice()) {
+        renderCoachList();
+        renderPublishUI();
+        renderMarathonMeta();
+        renderCoachTasks();
+      }
+    }
+
+    async function forceAppRefresh() {
+      const btns = [$("#appRefreshBtn"), $("#btnForceRefresh")].filter(Boolean);
+      btns.forEach(b => b.classList.add("spinning"));
+      btns.forEach(b => { if (b) b.disabled = true; });
+      try {
+        await checkForSWUpdate(true);
+        const ok = await fetchAppData({ quiet: true });
+        rerenderAfterDataRefresh();
+        if (!swReloadPending) {
+          toast(ok ? "Меню и задания обновлены" : "Офлайн — показаны сохранённые данные");
+        }
+      } finally {
+        btns.forEach(b => {
+          if (b) { b.classList.remove("spinning"); b.disabled = false; }
+        });
+      }
+    }
+
+    async function softRefreshOnVisible() {
+      if (!appInited || document.visibilityState !== "visible") return;
+      const ok = await fetchAppData({ quiet: true });
+      if (ok) rerenderAfterDataRefresh();
+      if ("serviceWorker" in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          reg.update();
+        } catch (e) {}
+      }
+    }
+
+    async function bootstrap() {
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        try { await registerAndUpdateSW(); } catch (e) { console.warn("SW:", e); }
+      }
+      await fetchAppData({ quiet: true });
+      if (!state.data) state.data = window.fallbackData;
+      if (!appInited) {
+        init();
+        appInited = true;
+      } else {
+        rerenderAfterDataRefresh();
+      }
+      updateSyncStatus();
     }
 
     // ===========================================================
@@ -2547,6 +2689,12 @@
       bindMarathonMeta();
       bindTaskForm();
       $("#todayAllTasksBtn").addEventListener("click", () => showTab("tasks"));
+      $("#appRefreshBtn").addEventListener("click", forceAppRefresh);
+      $("#btnForceRefresh").addEventListener("click", forceAppRefresh);
+      document.addEventListener("visibilitychange", softRefreshOnVisible);
+      window.addEventListener("pageshow", e => {
+        if (e.persisted) softRefreshOnVisible();
+      });
       updateCoachNav();
       renderAll();
       maybeOnboard();
@@ -5579,20 +5727,50 @@
     }
 
     // ===========================================================
-    // Service Worker
+    // Service Worker: регистрация и принудительное обновление
     // ===========================================================
-    if ("serviceWorker" in navigator && location.protocol !== "file:") {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js").catch(err => {
-          console.warn("SW registration failed:", err);
+    function registerAndUpdateSW() {
+      return navigator.serviceWorker.register("./sw.js?b=" + APP_BUILD).then(reg => {
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+        reg.addEventListener("updatefound", () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener("statechange", () => {
+            if (nw.state === "installed" && navigator.serviceWorker.controller) {
+              nw.postMessage({ type: "SKIP_WAITING" });
+            }
+          });
         });
+        return reg.update().then(() => reg);
+      }).then(reg => {
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (swReloadPending) return;
+          swReloadPending = true;
+          location.reload();
+        });
+        return reg;
       });
+    }
+
+    async function checkForSWUpdate(activateWaiting) {
+      if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+      try {
+        const reg = await navigator.serviceWorker.register("./sw.js?b=" + APP_BUILD);
+        await reg.update();
+        if (activateWaiting && reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+      } catch (e) {
+        console.warn("checkForSWUpdate:", e);
+      }
     }
 
     // ===========================================================
     // Старт
     // ===========================================================
-    loadData();
+    bootstrap();
   </script>
 </body>
 </html>
