@@ -2448,13 +2448,16 @@
       const diff = Math.floor((today - start) / 86400000) + 1;
       return Math.max(1, Math.min(diff, getMarathonTotalDays()));
     }
+    function totalMarathonWeeks() {
+      return Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
+    }
+
     function getCurrentWeek() {
       const start = getMarathonStart();
       const today = startOfDay(new Date());
       const daysPassed = Math.max(0, Math.floor((today - start) / 86400000));
       const w = Math.floor(daysPassed / 7) + 1;
-      const totalWeeks = Math.max(1, state.data.weeks.length);
-      return Math.max(1, Math.min(w, totalWeeks));
+      return Math.max(1, Math.min(w, totalMarathonWeeks()));
     }
     function getWeekByNumber(n) {
       return state.data.weeks.find(w => w.week === n) || null;
@@ -3144,13 +3147,17 @@
 
     function renderWeekSwitcher(container, active, onChange) {
       container.innerHTML = "";
-      state.data.weeks.forEach(w => {
+      const totalWeeks = totalMarathonWeeks();
+      const curWeek = getCurrentWeek();
+      for (let w = 1; w <= totalWeeks; w++) {
         const btn = document.createElement("button");
-        btn.className = "week-pill" + (w.week === active ? " active" : "");
-        btn.textContent = "Нед. " + w.week;
-        btn.addEventListener("click", () => onChange(w.week));
+        btn.className = "week-pill" + (w === active ? " active" : "");
+        let label = "Нед. " + w;
+        if (w === curWeek) label += " · сейчас";
+        btn.textContent = label;
+        btn.addEventListener("click", () => onChange(w));
         container.appendChild(btn);
-      });
+      }
     }
 
     // ===========================================================
@@ -5269,10 +5276,6 @@
       const totalWeeks = Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
       const w = Math.floor(diff / 7) + 1;
       return Math.min(w, totalWeeks + 1);
-    }
-
-    function totalMarathonWeeks() {
-      return Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
     }
 
     function bucketDatesByWeek(dateSet) {
