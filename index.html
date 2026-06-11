@@ -901,6 +901,35 @@
     }
     .shop-section-title:first-child { margin-top: 4px; }
 
+    .shop-cols-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 12px 8px;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .shop-cols-spacer { flex: 1; min-width: 0; }
+    .shop-col-lbl {
+      width: 44px;
+      text-align: center;
+      flex-shrink: 0;
+      line-height: 1.2;
+    }
+    .shop-checks {
+      display: flex;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .shop-checks input[type="checkbox"] {
+      width: 20px; height: 20px;
+      cursor: pointer;
+      margin: 0;
+    }
+    .shop-checks .cb-have { accent-color: #6ec46e; }
+    .shop-checks .cb-buy { accent-color: var(--accent); }
+
     details.shop-row {
       border-bottom: 1px solid var(--border);
     }
@@ -914,13 +943,7 @@
       gap: 10px;
     }
     details.shop-row > summary::-webkit-details-marker { display: none; }
-    details.shop-row > summary input[type="checkbox"] {
-      width: 20px; height: 20px;
-      accent-color: var(--accent);
-      cursor: pointer;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
+    details.shop-row > summary .shop-checks { margin-top: 2px; }
     details.shop-row .row-main {
       flex: 1;
       min-width: 0;
@@ -973,14 +996,15 @@
     }
     details.shop-row[open] .row-chev { transform: rotate(180deg); }
     details.shop-row.past-only { opacity: 0.6; }
-    details.shop-row.checked .row-name b {
+    details.shop-row.has-stock .row-name b {
       text-decoration: line-through;
       color: var(--muted);
     }
-    details.shop-row.checked .row-name .qty { color: var(--muted); }
+    details.shop-row.has-stock .row-name .qty { color: var(--muted); }
+    details.shop-row.to-buy .row-name b { color: var(--bg-dark); }
 
     details.shop-row .breakdown {
-      padding: 0 12px 12px 44px;
+      padding: 0 12px 12px 76px;
       background: var(--page-bg);
     }
     details.shop-row .breakdown .usage {
@@ -1050,17 +1074,12 @@
       border-bottom: 1px solid var(--border);
     }
     .shop-extra-row:last-child { border-bottom: 0; }
-    .shop-extra-row input[type="checkbox"] {
-      width: 20px; height: 20px;
-      accent-color: var(--accent);
-      cursor: pointer;
-      flex-shrink: 0;
-    }
+    .shop-extra-row .shop-checks { flex-shrink: 0; }
     .shop-extra-row .text {
       flex: 1;
       word-break: break-word;
     }
-    .shop-extra-row.checked .text {
+    .shop-extra-row.has-stock .text {
       text-decoration: line-through;
       color: var(--muted);
     }
@@ -1137,17 +1156,12 @@
       gap: 10px;
       padding: 8px 12px;
     }
-    details.shop-day .day-item input[type="checkbox"] {
-      width: 20px; height: 20px;
-      accent-color: var(--accent);
-      cursor: pointer;
-      flex-shrink: 0;
-    }
+    details.shop-day .day-item .shop-checks { flex-shrink: 0; }
     details.shop-day .day-item .di-text {
       flex: 1;
       word-break: break-word;
     }
-    details.shop-day .day-item.checked .di-text {
+    details.shop-day .day-item.has-stock .di-text {
       text-decoration: line-through;
       color: var(--muted);
     }
@@ -1158,7 +1172,7 @@
       font-variant-numeric: tabular-nums;
       font-size: 13px;
     }
-    details.shop-day .day-item.checked .di-qty { color: var(--muted); }
+    details.shop-day .day-item.has-stock .di-qty { color: var(--muted); }
 
     /* COACH MODE */
     .coach-link-wrap {
@@ -1648,7 +1662,7 @@
       <section class="tab-content" data-tab="shopping" hidden>
         <div class="card">
           <div class="shopping-header">
-            <div class="muted" id="shopCounter">Куплено: 0 / 0</div>
+            <div class="muted" id="shopCounter">Есть: 0 · Купить: 0 / 0</div>
             <button class="btn btn--ghost btn--sm" id="shopReset">Сбросить</button>
           </div>
           <div class="seg-toggle" id="shopMode">
@@ -1821,12 +1835,12 @@
               <label>Тип блюда в этом приёме пищи</label>
               <div id="cKind" class="kind-radios">
                 <label><input type="radio" name="cKind" value="main" checked> Основное</label>
-                <label><input type="radio" name="cKind" value="addon"> В пару</label>
+                <label><input type="radio" name="cKind" value="addon"> Дополнение</label>
                 <label><input type="radio" name="cKind" value="alt"> Альтернатива</label>
               </div>
               <div class="form-hint">
                 <b>Основное</b> — главное блюдо приёма пищи (одно на слот).
-                <b>В пару</b> — обязательное дополнение (соус, чай) — всегда вместе с основным.
+                <b>Дополнение</b> — обязательная добавка (соус, чай, гарнир) — всегда вместе с основным.
                 <b>Альтернатива</b> — вариант на выбор «по кошельку»; участник выбирает один.
               </div>
             </div>
@@ -2112,11 +2126,11 @@
 
     // ---- Тип блюда внутри одного приёма пищи ----
     // main  — основное (всегда показывается, всегда в корзине)
-    // addon — «в пару» (соус, гарнир) — всегда вместе с основным, всегда в корзине
+    // addon — дополнение (соус, гарнир) — всегда вместе с основным, всегда в корзине
     // alt   — альтернатива — выбор «по кошельку»; в корзину попадает только выбранная
     const DISH_KIND_DEF = {
       main:  { id: "main",  label: "Основное",     short: "осн.",    css: "main"  },
-      addon: { id: "addon", label: "В пару",       short: "в пару",  css: "addon" },
+      addon: { id: "addon", label: "Дополнение",   short: "доп.",    css: "addon" },
       alt:   { id: "alt",   label: "Альтернатива", short: "альт.",   css: "alt"   }
     };
     function normalizeKind(k) {
@@ -2603,7 +2617,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 21;
+    const APP_BUILD = 22;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -3393,7 +3407,7 @@
     }
 
     function dishBadgeHTML(kind) {
-      if (kind === "addon") return '<span class="dish-badge addon">в пару</span>';
+      if (kind === "addon") return '<span class="dish-badge addon">доп.</span>';
       if (kind === "alt")   return '<span class="dish-badge alt">альт.</span>';
       return "";
     }
@@ -3688,15 +3702,83 @@
       return "";
     }
 
-    // ----- Глобальные чекеды и extras (с миграцией со старых per-week ключей) -----
-    function getShoppingChecked() {
+    // ----- Отметки списка покупок: «есть» / «купить» + extras -----
+    function getShoppingHave() {
       try {
-        const arr = JSON.parse(localStorage.getItem("shopping_checked") || "[]");
+        const arr = JSON.parse(localStorage.getItem("shopping_have") || "[]");
         return new Set(Array.isArray(arr) ? arr.filter(s => typeof s === "string") : []);
       } catch (e) { return new Set(); }
     }
-    function saveShoppingChecked(set) {
-      localStorage.setItem("shopping_checked", JSON.stringify([...set]));
+    function saveShoppingHave(set) {
+      localStorage.setItem("shopping_have", JSON.stringify([...set]));
+    }
+    function getShoppingNeed() {
+      try {
+        const arr = JSON.parse(localStorage.getItem("shopping_need") || "[]");
+        return new Set(Array.isArray(arr) ? arr.filter(s => typeof s === "string") : []);
+      } catch (e) { return new Set(); }
+    }
+    function saveShoppingNeed(set) {
+      localStorage.setItem("shopping_need", JSON.stringify([...set]));
+    }
+    function setShoppingItemStatus(key, status) {
+      const have = getShoppingHave();
+      const need = getShoppingNeed();
+      have.delete(key);
+      need.delete(key);
+      if (status === "have") have.add(key);
+      else if (status === "need") need.add(key);
+      saveShoppingHave(have);
+      saveShoppingNeed(need);
+    }
+    function removeShoppingItemMarks(key) {
+      const have = getShoppingHave();
+      const need = getShoppingNeed();
+      have.delete(key);
+      need.delete(key);
+      saveShoppingHave(have);
+      saveShoppingNeed(need);
+    }
+    function buildShopDualChecks(key, haveSet, needSet, onRerender, stopProp) {
+      const wrap = document.createElement("div");
+      wrap.className = "shop-checks";
+
+      const cbHave = document.createElement("input");
+      cbHave.type = "checkbox";
+      cbHave.className = "cb-have";
+      cbHave.checked = haveSet.has(key);
+      cbHave.title = "Уже есть";
+      cbHave.setAttribute("aria-label", "Уже есть");
+      if (stopProp) cbHave.addEventListener("click", e => e.stopPropagation());
+      cbHave.addEventListener("change", () => {
+        setShoppingItemStatus(key, cbHave.checked ? "have" : "none");
+        onRerender();
+      });
+
+      const cbBuy = document.createElement("input");
+      cbBuy.type = "checkbox";
+      cbBuy.className = "cb-buy";
+      cbBuy.checked = needSet.has(key);
+      cbBuy.title = "Нужно купить";
+      cbBuy.setAttribute("aria-label", "Нужно купить");
+      if (stopProp) cbBuy.addEventListener("click", e => e.stopPropagation());
+      cbBuy.addEventListener("change", () => {
+        setShoppingItemStatus(key, cbBuy.checked ? "need" : "none");
+        onRerender();
+      });
+
+      wrap.appendChild(cbHave);
+      wrap.appendChild(cbBuy);
+      return wrap;
+    }
+    function makeShopColHeader() {
+      const h = document.createElement("div");
+      h.className = "shop-cols-head";
+      h.innerHTML =
+        '<span class="shop-cols-spacer">Продукт</span>' +
+        '<span class="shop-col-lbl" title="Уже есть дома">Есть</span>' +
+        '<span class="shop-col-lbl" title="Нужно купить">Купить</span>';
+      return h;
     }
     function getShoppingExtras() {
       try {
@@ -3711,24 +3793,11 @@
     function migrateShoppingStorage() {
       // checked → global by name|unit key
       if (localStorage.getItem("shopping_checked_migrated") !== "1") {
-        const acc = new Set(getShoppingChecked());
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith("shopping_checked_week_")) {
-            try {
-              const arr = JSON.parse(localStorage.getItem(k) || "[]");
-              if (Array.isArray(arr)) {
-                arr.forEach(s => {
-                  if (typeof s !== "string") return;
-                  const p = parseIngredient(s);
-                  acc.add(shoppingKey(p.name, p.unit));
-                });
-              }
-            } catch (e) {}
-          }
-        }
-        if (acc.size) saveShoppingChecked(acc);
         localStorage.setItem("shopping_checked_migrated", "1");
+      }
+      if (localStorage.getItem("shopping_dual_migrated") !== "1") {
+        localStorage.removeItem("shopping_checked");
+        localStorage.setItem("shopping_dual_migrated", "1");
       }
       // extras → global единый список
       if (localStorage.getItem("shopping_extras_migrated") !== "1") {
@@ -3825,15 +3894,18 @@
       const scopedUsages = filterUsagesByScope(allUsages, filter);
       const aggregated = aggregateShoppingUsages(scopedUsages, todayIso);
       const extras = getShoppingExtras();
-      const checked = getShoppingChecked();
+      const haveSet = getShoppingHave();
+      const needSet = getShoppingNeed();
 
-      // Счётчик
-      const allCount = aggregated.length + extras.length;
-      const checkedCount =
-        aggregated.filter(a => checked.has(a.key)).length +
-        extras.filter(e => checked.has(shoppingKey(e, ""))).length;
+      const allKeys = [
+        ...aggregated.map(a => a.key),
+        ...extras.map(e => shoppingKey(e, ""))
+      ];
+      const allCount = allKeys.length;
+      const haveCount = allKeys.filter(k => haveSet.has(k)).length;
+      const buyCount = allCount - haveCount;
       $("#shopCounter").textContent =
-        scopeLabel(filter) + " · куплено " + checkedCount + " / " + allCount;
+        scopeLabel(filter) + " · есть " + haveCount + " · купить " + buyCount + " / " + allCount;
 
       const list = $("#shopList");
       list.innerHTML = "";
@@ -3847,28 +3919,30 @@
         return;
       }
 
+      list.appendChild(makeShopColHeader());
+
       if (mode === "by_product") {
-        renderShoppingByProduct(list, aggregated, extras, checked, todayIso, filter);
+        renderShoppingByProduct(list, aggregated, extras, haveSet, needSet, todayIso, filter);
       } else {
-        renderShoppingByDay(list, scopedUsages, extras, checked, todayIso, filter);
+        renderShoppingByDay(list, scopedUsages, extras, haveSet, needSet, todayIso, filter);
       }
     }
 
     // ----- Режим «По продуктам» -----
-    function renderShoppingByProduct(list, aggregated, extras, checked, todayIso, filter) {
+    function renderShoppingByProduct(list, aggregated, extras, haveSet, needSet, todayIso, filter) {
       const active   = aggregated.filter(a => !a.isPastOnly);
       const pastOnly = aggregated.filter(a =>  a.isPastOnly);
 
       if (extras.length) {
         list.appendChild(makeSectionTitle("Свой список"));
-        extras.forEach(text => list.appendChild(buildExtraRow(text, checked)));
+        extras.forEach(text => list.appendChild(buildExtraRow(text, haveSet, needSet)));
       }
 
       if (active.length) {
         if (extras.length || pastOnly.length) {
-          list.appendChild(makeSectionTitle("Нужно купить"));
+          list.appendChild(makeSectionTitle("Из меню"));
         }
-        active.forEach(item => list.appendChild(buildProductRow(item, checked, todayIso, filter)));
+        active.forEach(item => list.appendChild(buildProductRow(item, haveSet, needSet, todayIso, filter)));
       }
 
       if (pastOnly.length) {
@@ -3879,7 +3953,7 @@
         det.appendChild(sum);
         const body = document.createElement("div");
         body.className = "used-list";
-        pastOnly.forEach(item => body.appendChild(buildProductRow(item, checked, todayIso, filter)));
+        pastOnly.forEach(item => body.appendChild(buildProductRow(item, haveSet, needSet, todayIso, filter)));
         det.appendChild(body);
         list.appendChild(det);
       }
@@ -3892,26 +3966,18 @@
       return h;
     }
 
-    function buildProductRow(item, checked, todayIso, filter) {
+    function buildProductRow(item, haveSet, needSet, todayIso, filter) {
       const det = document.createElement("details");
       det.className = "shop-row";
       if (item.isPastOnly) det.classList.add("past-only");
-      const isChecked = checked.has(item.key);
-      if (isChecked) det.classList.add("checked");
+      const isHave = haveSet.has(item.key);
+      const isNeed = needSet.has(item.key);
+      if (isHave) det.classList.add("has-stock");
+      else if (isNeed) det.classList.add("to-buy");
 
       const summary = document.createElement("summary");
 
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = isChecked;
-      cb.addEventListener("click", e => e.stopPropagation());
-      cb.addEventListener("change", () => {
-        const set = getShoppingChecked();
-        if (cb.checked) set.add(item.key); else set.delete(item.key);
-        saveShoppingChecked(set);
-        renderShoppingTab();
-      });
-      summary.appendChild(cb);
+      summary.appendChild(buildShopDualChecks(item.key, haveSet, needSet, renderShoppingTab, true));
 
       const main = document.createElement("div");
       main.className = "row-main";
@@ -3975,7 +4041,7 @@
         const meta = MEAL_DEF[u.mealKey] || { icon: "", name: u.mealKey };
         let line = getDayOfWeekRu(d) + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) +
                    " · " + meta.icon + " " + meta.name.toLowerCase();
-        if (u.dishKind === "addon")    line += " · в пару" + (u.dishTitle ? ": " + u.dishTitle : "");
+        if (u.dishKind === "addon")    line += " · доп." + (u.dishTitle ? ": " + u.dishTitle : "");
         else if (u.dishKind === "alt") line += " · альт.: " + (u.dishTitle || "");
         when.textContent = line;
         const amount = document.createElement("div");
@@ -4002,21 +4068,13 @@
       return det;
     }
 
-    function buildExtraRow(text, checked) {
+    function buildExtraRow(text, haveSet, needSet) {
       const key = shoppingKey(text, "");
-      const isChecked = checked.has(key);
+      const isHave = haveSet.has(key);
+      const isNeed = needSet.has(key);
       const row = document.createElement("div");
-      row.className = "shop-extra-row" + (isChecked ? " checked" : "");
-
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = isChecked;
-      cb.addEventListener("change", () => {
-        const set = getShoppingChecked();
-        if (cb.checked) set.add(key); else set.delete(key);
-        saveShoppingChecked(set);
-        renderShoppingTab();
-      });
+      row.className = "shop-extra-row" +
+        (isHave ? " has-stock" : "") + (isNeed ? " to-buy" : "");
 
       const txt = document.createElement("span");
       txt.className = "text";
@@ -4029,23 +4087,21 @@
       del.addEventListener("click", () => {
         const next = getShoppingExtras().filter(t => t !== text);
         saveShoppingExtras(next);
-        const set = getShoppingChecked();
-        set.delete(key);
-        saveShoppingChecked(set);
+        removeShoppingItemMarks(key);
         renderShoppingTab();
       });
 
-      row.appendChild(cb);
+      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
       row.appendChild(txt);
       row.appendChild(del);
       return row;
     }
 
     // ----- Режим «По дням» -----
-    function renderShoppingByDay(list, scopedUsages, extras, checked, todayIso, filter) {
+    function renderShoppingByDay(list, scopedUsages, extras, haveSet, needSet, todayIso, filter) {
       if (extras.length) {
         list.appendChild(makeSectionTitle("Свой список"));
-        extras.forEach(text => list.appendChild(buildExtraRow(text, checked)));
+        extras.forEach(text => list.appendChild(buildExtraRow(text, haveSet, needSet)));
       }
 
       // Группируем usages по дате
@@ -4060,11 +4116,11 @@
       if (extras.length) list.appendChild(makeSectionTitle("По дням"));
 
       dates.forEach(iso => {
-        list.appendChild(buildDayCard(iso, byDate.get(iso), checked, todayIso));
+        list.appendChild(buildDayCard(iso, byDate.get(iso), haveSet, needSet, todayIso));
       });
     }
 
-    function buildDayCard(iso, usages, checked, todayIso) {
+    function buildDayCard(iso, usages, haveSet, needSet, todayIso) {
       const d = new Date(iso + "T00:00:00");
       const det = document.createElement("details");
       det.className = "shop-day";
@@ -4107,29 +4163,22 @@
         title.className = "meal-group";
         title.textContent = m.icon + "  " + m.name;
         body.appendChild(title);
-        items.forEach(u => body.appendChild(buildDayItem(u, checked)));
+        items.forEach(u => body.appendChild(buildDayItem(u, haveSet, needSet)));
       });
 
       det.appendChild(body);
       return det;
     }
 
-    function buildDayItem(u, checked) {
+    function buildDayItem(u, haveSet, needSet) {
       const key = shoppingKey(u.name, u.unit);
-      const isChecked = checked.has(key);
+      const isHave = haveSet.has(key);
+      const isNeed = needSet.has(key);
       const row = document.createElement("div");
-      row.className = "day-item" + (isChecked ? " checked" : "");
+      row.className = "day-item" +
+        (isHave ? " has-stock" : "") + (isNeed ? " to-buy" : "");
 
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = isChecked;
-      cb.addEventListener("change", () => {
-        const set = getShoppingChecked();
-        if (cb.checked) set.add(key); else set.delete(key);
-        saveShoppingChecked(set);
-        renderShoppingTab();
-      });
-      row.appendChild(cb);
+      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
 
       const txt = document.createElement("span");
       txt.className = "di-text";
@@ -4175,8 +4224,9 @@
         if (e.key === "Enter") { e.preventDefault(); addItem(); }
       });
       $("#shopReset").addEventListener("click", () => {
-        if (!confirm("Сбросить все отметки «куплено»?")) return;
-        saveShoppingChecked(new Set());
+        if (!confirm("Сбросить все отметки «есть» и «купить»?")) return;
+        saveShoppingHave(new Set());
+        saveShoppingNeed(new Set());
         renderShoppingTab();
         toast("Отметки сброшены");
       });
@@ -4266,25 +4316,26 @@
       const allUsages = collectShoppingUsages();
       const weekUsages = filterUsagesByScope(allUsages, { type: "week", week: state.archiveWeek });
       const aggregated = aggregateShoppingUsages(weekUsages, todayIso);
-      const checked = getShoppingChecked();
+      const haveSet = getShoppingHave();
+      const needSet = getShoppingNeed();
 
       if (aggregated.length === 0) {
         list.innerHTML = '<div class="muted">Список на эту неделю пуст</div>';
         return;
       }
       aggregated.forEach(item => {
-        const isChecked = checked.has(item.key);
+        const isHave = haveSet.has(item.key);
+        const isNeed = needSet.has(item.key);
         const row = document.createElement("div");
-        row.className = "shop-item from-menu" + (isChecked ? " checked" : "");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = isChecked;
-        cb.disabled = true;
+        row.className = "shop-item from-menu" +
+          (isHave ? " checked" : "") + (isNeed ? " to-buy" : "");
+        const checks = buildShopDualChecks(item.key, haveSet, needSet, () => {}, false);
+        checks.querySelectorAll("input").forEach(cb => { cb.disabled = true; });
         const txt = document.createElement("span");
         txt.className = "text";
         const unit = item.unit ? " " + item.unit : "";
         txt.textContent = item.name + (item.hasNumeric ? " — " + fmtQty(item.totalQty) + unit : "");
-        row.appendChild(cb);
+        row.appendChild(checks);
         row.appendChild(txt);
         list.appendChild(row);
       });
@@ -5836,7 +5887,7 @@
         ? '<span class="order-badge">#' + order + '</span>' : '';
 
       let kindBadge = "";
-      if (dish.kind === "addon")    kindBadge = '<span class="dish-badge-sm addon">в пару</span>';
+      if (dish.kind === "addon")    kindBadge = '<span class="dish-badge-sm addon">доп.</span>';
       else if (dish.kind === "alt") kindBadge = '<span class="dish-badge-sm alt">альт.</span>';
 
       const subPrefix = isFirstInSlot ? (def.icon + " " + def.name) : "↳ к " + def.name.toLowerCase();
