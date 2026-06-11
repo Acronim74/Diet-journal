@@ -288,6 +288,38 @@
       border-radius: 10px;
     }
 
+    /* Сворачиваемый блок: график + история замеров */
+    details.meas-details {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    details.meas-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    details.meas-details > summary::-webkit-details-marker { display: none; }
+    details.meas-details > summary .chev {
+      margin-left: auto;
+      color: var(--muted);
+      transition: transform 200ms;
+      font-size: 12px;
+    }
+    details.meas-details[open] > summary .chev { transform: rotate(180deg); }
+    details.meas-details .meas-details-body {
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border);
+    }
+    details.meas-details .meas-details-body .grid-2 { margin-top: 12px; }
+
     /* STAT CARDS */
     .stat {
       background: var(--page-bg);
@@ -1625,21 +1657,49 @@
           </form>
         </div>
 
-        <div class="card">
-          <h2>Динамика веса</h2>
-          <div id="chartWrap" class="chart-wrap"></div>
-        </div>
-
-        <div class="grid-2">
-          <div class="stat">
-            <div class="value" id="lostKg">—</div>
-            <div class="label">Ушло, кг</div>
+        <details class="meas-details" id="progressDetails">
+          <summary>
+            <span>Прогресс в цифрах</span>
+            <span class="muted" id="progressDetailsHint" style="font-weight:400;font-size:13px">график и история</span>
+            <span class="chev">▾</span>
+          </summary>
+          <div class="meas-details-body">
+            <h3 style="margin:12px 0 8px;font-size:14px">Динамика веса</h3>
+            <div id="chartWrap" class="chart-wrap"></div>
+            <div class="grid-2">
+              <div class="stat">
+                <div class="value" id="lostKg">—</div>
+                <div class="label">Ушло, кг</div>
+              </div>
+              <div class="stat">
+                <div class="value" id="lostCm">—</div>
+                <div class="label">Ушло, см</div>
+              </div>
+            </div>
+            <h3 style="margin:16px 0 8px;font-size:14px">История замеров</h3>
+            <div class="table-wrap">
+              <table class="archive" id="archiveTable">
+                <colgroup>
+                  <col class="c-day">
+                  <col class="c-date">
+                  <col class="c-w">
+                  <col class="c-st">
+                  <col class="c-meas">
+                  <col class="c-meas">
+                  <col class="c-meas">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>День</th><th>Дата</th><th>Вес</th><th>Шаги</th>
+                    <th>Тал.</th><th>Бёд.</th><th>Грудь</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="muted" id="archiveSummary" style="margin-top:8px;font-size:13px">—</div>
           </div>
-          <div class="stat">
-            <div class="value" id="lostCm">—</div>
-            <div class="label">Ушло, см</div>
-          </div>
-        </div>
+        </details>
       </section>
 
       <!-- TAB: TASKS -->
@@ -1680,42 +1740,11 @@
         </div>
       </section>
 
-      <!-- TAB 4: ARCHIVE -->
-      <section class="tab-content" data-tab="archive" hidden>
+      <!-- TAB: MORE -->
+      <section class="tab-content" data-tab="more" hidden>
         <div class="card">
-          <h2>История замеров</h2>
-          <div class="table-wrap">
-            <table class="archive" id="archiveTable">
-              <colgroup>
-                <col class="c-day">
-                <col class="c-date">
-                <col class="c-w">
-                <col class="c-st">
-                <col class="c-meas">
-                <col class="c-meas">
-                <col class="c-meas">
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>День</th><th>Дата</th><th>Вес</th><th>Шаги</th>
-                  <th>Тал.</th><th>Бёд.</th><th>Грудь</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div class="muted" id="archiveSummary" style="margin-top:12px"></div>
-        </div>
-
-        <div class="card">
-          <h2>Архив меню</h2>
-          <div class="week-switcher" id="archWeekSwitcher"></div>
-          <div id="archMenuList"></div>
-        </div>
-
-        <div class="card">
-          <h2>Список продуктов недели</h2>
-          <div id="archShopList"></div>
+          <h2>Ещё</h2>
+          <div class="muted">Синхронизация, резервная копия и настройки</div>
         </div>
 
         <div class="card">
@@ -2061,9 +2090,9 @@
         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.95-1.55L21 7H6"/></svg>
         <span class="label">Список</span>
       </button>
-      <button class="nav-btn" data-tab="archive" aria-label="Архив">
-        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><line x1="10" y1="13" x2="14" y2="13"/></svg>
-        <span class="label">Архив</span>
+      <button class="nav-btn" data-tab="more" aria-label="Ещё">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+        <span class="label">Ещё</span>
       </button>
       <button class="nav-btn nav-btn--coach" id="coachNavBtn" data-tab="coach" hidden aria-label="Коуч">
         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -2239,8 +2268,7 @@
     const state = {
       data: null,
       tab: "measurements",
-      menuWeek: 1,
-      archiveWeek: 1
+      menuWeek: 1
     };
 
     // ===========================================================
@@ -2619,7 +2647,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 23;
+    const APP_BUILD = 24;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -2780,7 +2808,6 @@
       if (!state.data) state.data = window.fallbackData;
 
       state.menuWeek = getCurrentWeek();
-      state.archiveWeek = getCurrentWeek();
 
       if (!appInited) {
         init();
@@ -2798,7 +2825,6 @@
       ensureMarathonStart();
       migrateShoppingStorage();
       state.menuWeek = getCurrentWeek();
-      state.archiveWeek = getCurrentWeek();
 
       renderHeader();
       bindNav();
@@ -2825,7 +2851,9 @@
       const hashTab = (location.hash.match(/tab=([a-z]+)/) || [])[1];
       if (hashTab === "coach" && (hasCoachNavAccess() || isCoachAuthenticated())) {
         openCoachPage();
-      } else if (hashTab && ["measurements","tasks","menu","shopping","archive"].includes(hashTab)) {
+      } else if (hashTab === "archive") {
+        showTab("more");
+      } else if (hashTab && ["measurements","tasks","menu","shopping","more"].includes(hashTab)) {
         showTab(hashTab);
       }
     }
@@ -2835,7 +2863,7 @@
       renderTasksTab();
       renderMenuTab();
       renderShoppingTab();
-      renderArchiveTab();
+      renderMoreTab();
     }
 
     function renderHeader() {
@@ -2894,6 +2922,24 @@
       renderTodayForm();
       renderWeightChart();
       renderTotals();
+      renderMeasurementsHistory();
+      updateProgressDetailsHint();
+    }
+
+    function updateProgressDetailsHint() {
+      const el = $("#progressDetailsHint");
+      if (!el) return;
+      const weights = getAllEntries().filter(e => typeof e.weight === "number");
+      if (weights.length < 2) {
+        el.textContent = "график и история";
+        return;
+      }
+      const diff = round1(weights[0].weight - weights[weights.length - 1].weight);
+      if (diff === 0) {
+        el.textContent = "без изменений";
+      } else {
+        el.textContent = (diff > 0 ? "ушло " : "+") + Math.abs(diff).toFixed(1) + " кг";
+      }
     }
 
     // ---------- Карточка «Сегодня» (главный экран) ----------
@@ -3086,7 +3132,6 @@
         localStorage.setItem(dayKey(today), JSON.stringify(entry));
         toast("Сохранено");
         renderMeasurementsTab();
-        renderArchiveTab();
       });
     }
     function parseFloatOrNull(v) { const n = parseFloat(v); return isFinite(n) ? n : null; }
@@ -4238,18 +4283,13 @@
     }
 
     // ===========================================================
-    // ВКЛАДКА 4: Архив
+    // ВКЛАДКА: Ещё
     // ===========================================================
-    function renderArchiveTab() {
-      renderArchiveTable();
-      renderWeekSwitcher($("#archWeekSwitcher"), state.archiveWeek, n => {
-        state.archiveWeek = n; renderArchiveTab();
-      });
-      renderArchiveMenu();
-      renderArchiveShopping();
+    function renderMoreTab() {
+      updateSyncStatus();
     }
 
-    function renderArchiveTable() {
+    function renderMeasurementsHistory() {
       const tbody = $("#archiveTable tbody");
       tbody.innerHTML = "";
       const total = getMarathonTotalDays();
@@ -4306,45 +4346,6 @@
       }
       $("#archiveSummary").textContent =
         parts.length ? "За марафон: " + parts.join(", ") : "Накапливайте записи — итоги появятся здесь.";
-    }
-
-    function renderArchiveMenu() {
-      const list = $("#archMenuList");
-      list.innerHTML = "";
-      renderDayCardsForWeek(list, state.archiveWeek, /*highlightToday*/ false);
-    }
-
-    function renderArchiveShopping() {
-      const list = $("#archShopList");
-      list.innerHTML = "";
-      const todayIso = isoDate(new Date());
-      const allUsages = collectShoppingUsages();
-      const weekUsages = filterUsagesByScope(allUsages, { type: "week", week: state.archiveWeek });
-      const aggregated = aggregateShoppingUsages(weekUsages, todayIso);
-      const haveSet = getShoppingHave();
-      const needSet = getShoppingNeed();
-
-      if (aggregated.length === 0) {
-        list.innerHTML = '<div class="muted">Список на эту неделю пуст</div>';
-        return;
-      }
-      aggregated.forEach(item => {
-        const isHave = haveSet.has(item.key);
-        const isNeed = needSet.has(item.key);
-        const row = document.createElement("div");
-        row.className = "shop-item from-menu shop-row-layout" +
-          (isHave ? " checked" : "") + (isNeed ? " to-buy" : "");
-        const checks = buildShopDualChecks(item.key, haveSet, needSet, () => {}, false);
-        checks.querySelectorAll("input").forEach(cb => { cb.disabled = true; });
-        const txt = document.createElement("span");
-        txt.className = "text";
-        const unit = item.unit ? " " + item.unit : "";
-        txt.textContent = item.name + (item.hasNumeric ? " — " + fmtQty(item.totalQty) + unit : "");
-        row.appendChild(txt);
-        row.appendChild(checks);
-        row.appendChild(document.createElement("span"));
-        list.appendChild(row);
-      });
     }
 
     // ===========================================================
@@ -4501,7 +4502,7 @@
     }
 
     function bindCoachTriggers() {
-      // 1) Маленькая ссылка внизу вкладки «Архив»
+      // 1) Маленькая ссылка внизу вкладки «Ещё»
       $("#coachLink").addEventListener("click", () => {
         if (isCoachAuthenticated()) openCoachPage();
         else openCoachAuth();
@@ -4552,7 +4553,7 @@
       setCoachAuthenticated(false);
       clearCoachDevice();
       updateCoachNav();
-      showTab("archive");
+      showTab("more");
       renderMenuTab();
       renderShoppingTab();
       renderTasksTab();
@@ -4602,7 +4603,7 @@
 
       // Пере-рендерим вкладки, поскольку флаг isCoachDevice мог только что включиться
       renderTasksTab(); renderTodayCard();
-      renderMenuTab(); renderShoppingTab(); renderArchiveTab();
+      renderMenuTab(); renderShoppingTab();
     }
 
     function deepClone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -4684,7 +4685,7 @@
         renderPublishUI();
         renderMenuTab();
         renderShoppingTab();
-        renderArchiveTab();
+        renderMoreTab();
       });
 
       $("#cExportBtn").addEventListener("click", () => {
@@ -4705,7 +4706,7 @@
           renderPublishUI();
           renderMenuTab();
           renderShoppingTab();
-          renderArchiveTab();
+          renderMoreTab();
           toast("Меню загружено");
         });
       });
@@ -4718,7 +4719,7 @@
         renderPublishUI();
         renderMenuTab();
         renderShoppingTab();
-        renderArchiveTab();
+        renderMoreTab();
         toast("Меню очищено");
       });
 
@@ -4989,7 +4990,7 @@
         renderPublishUI();
         renderMenuTab();
         renderShoppingTab();
-        renderArchiveTab();
+        renderMoreTab();
       } catch (e) {
         console.error(e);
         alert("Ошибка публикации дня " + dateIso + ":\n\n" + e.message +
@@ -5024,7 +5025,7 @@
         renderPublishUI();
         renderMenuTab();
         renderShoppingTab();
-        renderArchiveTab();
+        renderMoreTab();
       } catch (e) {
         console.error(e);
         alert("Ошибка публикации:\n\n" + e.message +
@@ -5176,9 +5177,7 @@
       const v = parseInt($("#cWeekStart").value, 10);
       state.data.marathon.week_start_day = (v >= 0 && v <= 6) ? v : 1;
       state.menuWeek = getCurrentWeek();
-      state.archiveWeek = getCurrentWeek();
       if (state.tab === "menu") renderMenuTab();
-      else if (state.tab === "archive") renderArchiveTab();
     }
 
     function bindMarathonMeta() {
@@ -5924,7 +5923,7 @@
           }
           renderCoachList();
           renderPublishUI();
-          renderMenuTab(); renderShoppingTab(); renderArchiveTab();
+          renderMenuTab(); renderShoppingTab();
           toast("Удалено");
         });
         row.appendChild(del);
