@@ -1,5 +1,4 @@
-const CACHE = 'marathon-v19';
-// Фиксированный ключ кэша для data.json (без query-string) — только офлайн-fallback.
+const CACHE = 'marathon-v21';
 const DATA_CACHE_KEY = new Request('./data.json', { cache: 'reload' });
 
 const SHELL_ASSETS = [
@@ -27,8 +26,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SKIP_WAITING') {
+  if (!e.data || !e.data.type) return;
+  if (e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (e.data.type === 'CLEAR_CACHES') {
+    e.waitUntil(
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    );
   }
 });
 
@@ -43,15 +48,22 @@ function isShellAsset(url) {
 }
 
 async function networkFirstData(request) {
+  const force = request.headers.get('X-Force-Refresh') === '1';
+  const cache = await caches.open(CACHE);
+  if (force) await cache.delete(DATA_CACHE_KEY);
+
   try {
-    const res = await fetch(request, { cache: 'no-store' });
+    const res = await fetch(new Request(request.url, {
+      method: 'GET',
+      headers: request.headers,
+      cache: force ? 'reload' : 'no-store'
+    }));
     if (res && res.ok) {
-      const cache = await caches.open(CACHE);
       await cache.put(DATA_CACHE_KEY, res.clone());
     }
     return res;
   } catch (err) {
-    const cache = await caches.open(CACHE);
+    if (force) throw err;
     const cached = await cache.match(DATA_CACHE_KEY);
     if (cached) return cached;
     throw err;
@@ -59,8 +71,13 @@ async function networkFirstData(request) {
 }
 
 async function networkFirstShell(request) {
+  const force = request.headers.get('X-Force-Refresh') === '1';
   try {
-    const res = await fetch(request, { cache: 'no-store' });
+    const res = await fetch(new Request(request.url, {
+      method: 'GET',
+      headers: request.headers,
+      cache: force ? 'reload' : 'no-store'
+    }));
     if (res && res.ok) {
       const cache = await caches.open(CACHE);
       await cache.put(request, res.clone());

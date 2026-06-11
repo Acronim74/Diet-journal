@@ -1216,6 +1216,14 @@
     }
     .ing-add .btn { width: 100%; padding: 0; font-size: 22px; line-height: 1; }
 
+    /* При вводе ингредиентов — отступ при автоскролле (не раздувает страницу постоянно) */
+    #coachForm .ing-add,
+    #coachForm .ing-list .ing-row:last-child,
+    #coachForm textarea,
+    #coachForm .grid-2:last-of-type {
+      scroll-margin-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 24px);
+    }
+
     .coach-meal {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -1699,8 +1707,8 @@
           <div class="muted" id="syncStatus" style="font-size:13px; margin-bottom:10px">—</div>
           <button type="button" class="btn btn--block" id="btnForceRefresh">Обновить меню и задания</button>
           <div class="form-hint" style="margin-top:8px">
-            При открытии приложение само запрашивает свежие данные с сервера.
-            Если меню не появилось — нажми эту кнопку (или ↻ в шапке).
+            Кнопка очищает кэш и <b>перезагружает приложение</b> — как переустановка,
+            но быстрее. При обычном открытии данные тоже запрашиваются с сервера.
           </div>
         </div>
 
@@ -1752,6 +1760,21 @@
               <div>
                 <label for="cMarathonEnd">Окончание</label>
                 <input id="cMarathonEnd" type="date">
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <label for="cWeekStart">Начало недели (для вкладки «Меню»)</label>
+              <select id="cWeekStart">
+                <option value="1">Понедельник</option>
+                <option value="2">Вторник</option>
+                <option value="3">Среда</option>
+                <option value="4">Четверг</option>
+                <option value="5">Пятница</option>
+                <option value="6">Суббота</option>
+                <option value="0">Воскресенье</option>
+              </select>
+              <div class="form-hint">
+                Недели в меню будут идти с выбранного дня (календарные недели внутри марафона).
               </div>
             </div>
             <div class="muted" id="cMarathonInfo" style="font-size:12px; margin-top:8px">—</div>
@@ -2065,7 +2088,7 @@
     // (например, открытие через file:// без HTTP-сервера)
     // ===========================================================
     window.fallbackData = {
-      marathon: { title: "Марафон −10", total_days: 21, start_date: "2025-06-01" },
+      marathon: { title: "Марафон −10", total_days: 21, start_date: "2025-06-01", week_start_day: 1 },
       tasks: [],
       coach_overrides: {},
       weeks: [
@@ -2492,9 +2515,7 @@
       const overrides = getEffectiveOverrides();
       const dayOverride = overrides[iso] || {};
 
-      const start = getMarathonStart();
-      const daysPassed = Math.floor((startOfDay(date) - start) / 86400000);
-      const weekNum = Math.floor(daysPassed / 7) + 1;
+      const weekNum = getWeekNumberForDate(date) || 1;
       const w = getWeekByNumber(weekNum);
       const fallback = (w && w.menu && w.menu[weekday]) || {};
 
@@ -2512,16 +2533,52 @@
       const diff = Math.floor((today - start) / 86400000) + 1;
       return Math.max(1, Math.min(diff, getMarathonTotalDays()));
     }
+    // Начало недели в меню: 0=вс … 6=сб (как Date.getDay). По умолчанию — понедельник.
+    function getWeekStartDay() {
+      const m = (state.data && state.data.marathon) || {};
+      const v = m.week_start_day;
+      return (typeof v === "number" && v >= 0 && v <= 6) ? v : 1;
+    }
+
+    function weekStartOnOrBefore(date) {
+      const d = startOfDay(date);
+      const ws = getWeekStartDay();
+      const diff = (d.getDay() - ws + 7) % 7;
+      return new Date(d.getTime() - diff * 86400000);
+    }
+
+    function getFirstMarathonWeekStart() {
+      return weekStartOnOrBefore(getMarathonStart());
+    }
+
+    function getWeekStartForWeekNum(weekNum) {
+      const first = getFirstMarathonWeekStart();
+      return new Date(first.getTime() + (weekNum - 1) * 7 * 86400000);
+    }
+
+    function getWeekNumberForDate(date) {
+      const d = startOfDay(date);
+      const start = getMarathonStart();
+      const end = getMarathonEnd();
+      if (d < start || d > end) return null;
+      const first = getFirstMarathonWeekStart();
+      const thisWeekStart = weekStartOnOrBefore(d);
+      return Math.floor((thisWeekStart - first) / 86400000 / 7) + 1;
+    }
+
     function totalMarathonWeeks() {
-      return Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
+      const first = getFirstMarathonWeekStart();
+      const lastWeekStart = weekStartOnOrBefore(getMarathonEnd());
+      const diff = Math.floor((lastWeekStart - first) / 86400000 / 7);
+      return Math.max(1, diff + 1);
     }
 
     function getCurrentWeek() {
-      const start = getMarathonStart();
+      const w = getWeekNumberForDate(new Date());
+      if (w) return w;
       const today = startOfDay(new Date());
-      const daysPassed = Math.max(0, Math.floor((today - start) / 86400000));
-      const w = Math.floor(daysPassed / 7) + 1;
-      return Math.max(1, Math.min(w, totalMarathonWeeks()));
+      if (today < getMarathonStart()) return 1;
+      return totalMarathonWeeks();
     }
     function getWeekByNumber(n) {
       return state.data.weeks.find(w => w.week === n) || null;
@@ -2546,13 +2603,36 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 19;
+    const APP_BUILD = 21;
     let swReloadPending = false;
+    let swListenerBound = false;
     let appInited = false;
 
     function countMenuDays(data) {
       const o = (data && data.coach_overrides) || {};
       return Object.keys(o).length;
+    }
+
+    function latestMenuDateIso(data) {
+      const keys = Object.keys((data && data.coach_overrides) || {}).sort();
+      return keys.length ? keys[keys.length - 1] : null;
+    }
+
+    async function clearAllAppCaches() {
+      if (!("caches" in window)) return;
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+
+    async function postMessageToSW(msg) {
+      if (!("serviceWorker" in navigator)) return;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sw = reg.active || reg.waiting || reg.installing;
+        if (sw) sw.postMessage(msg);
+      } catch (e) {
+        console.warn("postMessageToSW:", e);
+      }
     }
 
     function formatSyncTime(iso) {
@@ -2571,8 +2651,10 @@
       const tasks = (state.data && Array.isArray(state.data.tasks)) ? state.data.tasks.length : 0;
       let line = "Меню: <b>" + days + "</b> дн.";
       if (tasks) line += " · заданий: <b>" + tasks + "</b>";
+      const latest = latestMenuDateIso(state.data);
+      if (latest) line += "<br>Последний день меню: <b>" + formatIsoRu(latest) + "</b>";
       if (last) {
-        line += "<br>Последняя синхронизация: " + formatSyncTime(last);
+        line += "<br>Синхронизация: " + formatSyncTime(last);
       } else {
         line += "<br><span style=\"color:var(--accent)\">Ещё не синхронизировалось с сервером</span>";
       }
@@ -2581,19 +2663,34 @@
 
     async function fetchAppData(opts) {
       const quiet = opts && opts.quiet;
+      const force = opts && opts.force;
+      const headers = {
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+      };
+      if (force) headers["X-Force-Refresh"] = "1";
+
       try {
         const res = await fetch("./data.json?_=" + Date.now(), {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" }
+          cache: force ? "reload" : "no-store",
+          headers: headers
         });
         if (!res.ok) throw new Error("HTTP " + res.status);
         state.data = await res.json();
         localStorage.setItem("data_last_sync", new Date().toISOString());
         updateSyncStatus();
-        if (!quiet) toast("Данные обновлены");
+        if (!quiet) {
+          const n = countMenuDays(state.data);
+          const latest = latestMenuDateIso(state.data);
+          toast("Загружено " + n + " дн. меню" + (latest ? " (до " + formatIsoRu(latest) + ")" : ""));
+        }
         return true;
       } catch (err) {
         console.warn("fetchAppData:", err);
+        if (force) {
+          if (!quiet) toast("Не удалось загрузить с сервера — проверьте интернет");
+          return false;
+        }
         if (!state.data) {
           try {
             const res2 = await fetch("./data.json", { cache: "no-store" });
@@ -2623,21 +2720,24 @@
       }
     }
 
+    // Принудительное обновление: снести кэш SW/браузера и перезагрузить страницу
+    // (как переустановка PWA, но в один клик). После reload — свежий data.json.
     async function forceAppRefresh() {
       const btns = [$("#appRefreshBtn"), $("#btnForceRefresh")].filter(Boolean);
       btns.forEach(b => b.classList.add("spinning"));
       btns.forEach(b => { if (b) b.disabled = true; });
       try {
+        await clearAllAppCaches();
+        await postMessageToSW({ type: "CLEAR_CACHES" });
         await checkForSWUpdate(true);
-        const ok = await fetchAppData({ quiet: true });
-        rerenderAfterDataRefresh();
-        if (!swReloadPending) {
-          toast(ok ? "Меню и задания обновлены" : "Офлайн — показаны сохранённые данные");
-        }
-      } finally {
+        sessionStorage.setItem("app_force_refresh", "1");
+        location.reload();
+      } catch (e) {
+        console.error(e);
         btns.forEach(b => {
           if (b) { b.classList.remove("spinning"); b.disabled = false; }
         });
+        toast("Ошибка обновления — попробуйте ещё раз");
       }
     }
 
@@ -2654,11 +2754,18 @@
     }
 
     async function bootstrap() {
+      const wasForce = sessionStorage.getItem("app_force_refresh") === "1";
+      if (wasForce) sessionStorage.removeItem("app_force_refresh");
+
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
         try { await registerAndUpdateSW(); } catch (e) { console.warn("SW:", e); }
       }
-      await fetchAppData({ quiet: true });
+      await fetchAppData({ quiet: !wasForce, force: wasForce });
       if (!state.data) state.data = window.fallbackData;
+
+      state.menuWeek = getCurrentWeek();
+      state.archiveWeek = getCurrentWeek();
+
       if (!appInited) {
         init();
         appInited = true;
@@ -3084,15 +3191,15 @@
     }
 
     function renderDayCardsForWeek(container, weekNum, highlightToday) {
-      const start = getMarathonStart();
+      const weekStart = getWeekStartForWeekNum(weekNum);
+      const marathonStart = getMarathonStart();
+      const marathonEnd = getMarathonEnd();
       const todayIso = isoDate(new Date());
-      const totalDays = getMarathonTotalDays();
       let anyRendered = false;
 
       for (let i = 0; i < 7; i++) {
-        const dayIdx = (weekNum - 1) * 7 + i;
-        if (dayIdx >= totalDays) break;
-        const date = new Date(start.getTime() + dayIdx * 86400000);
+        const date = new Date(weekStart.getTime() + i * 86400000);
+        if (date < marathonStart || date > marathonEnd) continue;
         const { iso, weekday, meals } = getMealsForDate(date);
         if (Object.keys(meals).length === 0) continue;
         anyRendered = true;
@@ -3323,6 +3430,15 @@
       return box;
     }
 
+    function scrollWeekSwitcherToActive(container) {
+      requestAnimationFrame(() => {
+        const btn = container.querySelector(".week-pill.active");
+        if (!btn || container.scrollWidth <= container.clientWidth) return;
+        const left = btn.offsetLeft - (container.clientWidth - btn.offsetWidth) / 2;
+        container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+      });
+    }
+
     function renderWeekSwitcher(container, active, onChange) {
       container.innerHTML = "";
       const totalWeeks = totalMarathonWeeks();
@@ -3336,6 +3452,7 @@
         btn.addEventListener("click", () => onChange(w));
         container.appendChild(btn);
       }
+      scrollWeekSwitcherToActive(container);
     }
 
     // ===========================================================
@@ -4448,6 +4565,10 @@
       };
       $("#cIngName").addEventListener("keydown", onIngEnter);
       $("#cIngWeight").addEventListener("keydown", onIngEnter);
+      ["cIngName", "cIngWeight", "cRecipe"].forEach(id => {
+        const el = $("#" + id);
+        if (el) el.addEventListener("focus", () => scrollCoachFieldIntoView(el));
+      });
       $("#cIngTargetCancel").addEventListener("click", () => {
         cancelIngAddingMode();
       });
@@ -4867,6 +4988,8 @@
       // отрисовке либо если поля пусты — чтобы не сбивать незавершённое редактирование.
       if (!sIn.value && m.start_date) sIn.value = m.start_date;
       if (!eIn.value && m.end_date)   eIn.value = m.end_date;
+      const wsIn = $("#cWeekStart");
+      if (wsIn) wsIn.value = String(getWeekStartDay());
 
       const status = $("#cMarathonStatus");
       const hint = $("#coachHintMarathon");
@@ -4968,6 +5091,7 @@
         remoteData.marathon.start_date = sIso;
         remoteData.marathon.end_date   = eIso;
         remoteData.marathon.total_days = days;
+        remoteData.marathon.week_start_day = parseInt($("#cWeekStart").value, 10);
         if (!remoteData.marathon.title) remoteData.marathon.title = "Марафон";
 
         const commitMsg = "Coach: marathon dates " + sIso + " → " + eIso + " (" + days + "d)";
@@ -4990,12 +5114,25 @@
       }
     }
 
+    function applyWeekStartDayFromForm() {
+      if (!state.data.marathon) state.data.marathon = {};
+      const v = parseInt($("#cWeekStart").value, 10);
+      state.data.marathon.week_start_day = (v >= 0 && v <= 6) ? v : 1;
+      state.menuWeek = getCurrentWeek();
+      state.archiveWeek = getCurrentWeek();
+      if (state.tab === "menu") renderMenuTab();
+      else if (state.tab === "archive") renderArchiveTab();
+    }
+
     function bindMarathonMeta() {
       $("#cMarathonStart").addEventListener("change", updateMarathonInfo);
       $("#cMarathonEnd").addEventListener("change", updateMarathonInfo);
+      $("#cWeekStart").addEventListener("change", applyWeekStartDayFromForm);
       $("#cMarathonResetBtn").addEventListener("click", () => {
         $("#cMarathonStart").value = "";
         $("#cMarathonEnd").value = "";
+        $("#cWeekStart").value = "1";
+        applyWeekStartDayFromForm();
         renderMarathonMeta();
       });
       $("#cMarathonPubBtn").addEventListener("click", publishMarathonToGitHub);
@@ -5277,7 +5414,8 @@
       const diff = Math.floor((startOfDay(d) - start) / 86400000);
       let label = wd + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear();
       if (diff >= 0 && diff < getMarathonTotalDays()) {
-        label += " · день " + (diff + 1) + ", неделя " + (Math.floor(diff / 7) + 1) + " марафона";
+        const wk = getWeekNumberForDate(d);
+        label += " · день " + (diff + 1) + (wk ? ", неделя " + wk : "");
       } else if (diff < 0) {
         label += " · до старта марафона";
       } else {
@@ -5363,6 +5501,13 @@
       renderCoachIngList();
     }
 
+    function scrollCoachFieldIntoView(el) {
+      if (!el || el.hidden) return;
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+    }
+
     function renderCoachIngList() {
       const list = $("#cIngList");
       list.innerHTML = "";
@@ -5412,6 +5557,10 @@
 
         list.appendChild(row);
       });
+      if (coachForm.ingredients.length > 0) {
+        const addRow = $("#cIngAddBtn") && $("#cIngAddBtn").closest(".ing-add");
+        scrollCoachFieldIntoView(addRow || list.lastElementChild);
+      }
     }
 
     function coachClearForm() {
@@ -5466,16 +5615,16 @@
     }
 
     // ---------- Coach: helpers for grouped list ----------
-    // Какая «неделя марафона» у даты ISO (>=1; -1 если до старта; total_weeks+1 если после).
+    // Какая неделя у даты ISO (>=1; -1 если до старта; total_weeks+1 если после).
     function weekIndexForDate(iso) {
       const d = new Date(iso + "T00:00:00");
       if (isNaN(d)) return null;
       const start = getMarathonStart();
-      const diff = Math.floor((startOfDay(d) - start) / 86400000);
-      if (diff < 0) return -1;
-      const totalWeeks = Math.max(1, Math.ceil(getMarathonTotalDays() / 7));
-      const w = Math.floor(diff / 7) + 1;
-      return Math.min(w, totalWeeks + 1);
+      const end = getMarathonEnd();
+      const sd = startOfDay(d);
+      if (sd < start) return -1;
+      if (sd > end) return totalMarathonWeeks() + 1;
+      return getWeekNumberForDate(d);
     }
 
     function bucketDatesByWeek(dateSet) {
@@ -5743,14 +5892,15 @@
             }
           });
         });
+        if (!swListenerBound) {
+          swListenerBound = true;
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (swReloadPending) return;
+            swReloadPending = true;
+            location.reload();
+          });
+        }
         return reg.update().then(() => reg);
-      }).then(reg => {
-        navigator.serviceWorker.addEventListener("controllerchange", () => {
-          if (swReloadPending) return;
-          swReloadPending = true;
-          location.reload();
-        });
-        return reg;
       });
     }
 

@@ -3,7 +3,8 @@
     "title": "Марафон −10",
     "total_days": 55,
     "start_date": "2026-05-07",
-    "end_date": "2026-06-30"
+    "end_date": "2026-06-30",
+    "week_start_day": 1
   },
   "tasks": [],
   "coach_overrides": {
