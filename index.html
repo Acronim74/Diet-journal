@@ -775,13 +775,11 @@
       margin-bottom: 8px;
     }
     .shop-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
       padding: 10px 12px;
       border-bottom: 1px solid var(--border);
       transition: background 150ms;
     }
+    .shop-item.shop-row-layout { display: grid; }
     .shop-item:last-child { border-bottom: 0; }
     .shop-item input[type="checkbox"] {
       width: 20px; height: 20px;
@@ -901,26 +899,35 @@
     }
     .shop-section-title:first-child { margin-top: 4px; }
 
-    .shop-cols-head {
-      display: flex;
-      align-items: center;
+    .shop-row-layout {
+      display: grid;
+      grid-template-columns: 1fr 100px 18px;
       gap: 10px;
+      align-items: center;
+    }
+    .shop-cols-head {
       padding: 4px 12px 8px;
       font-size: 11px;
       color: var(--muted);
       border-bottom: 1px solid var(--border);
     }
-    .shop-cols-spacer { flex: 1; min-width: 0; }
+    .shop-cols-spacer { min-width: 0; }
+    .shop-col-labels {
+      display: grid;
+      grid-template-columns: 44px 44px;
+      gap: 12px;
+      justify-items: center;
+    }
     .shop-col-lbl {
-      width: 44px;
       text-align: center;
-      flex-shrink: 0;
       line-height: 1.2;
     }
+    .shop-cols-chev { width: 18px; }
     .shop-checks {
-      display: flex;
+      display: grid;
+      grid-template-columns: 44px 44px;
       gap: 12px;
-      flex-shrink: 0;
+      justify-items: center;
     }
     .shop-checks input[type="checkbox"] {
       width: 20px; height: 20px;
@@ -938,12 +945,10 @@
       list-style: none;
       cursor: pointer;
       padding: 10px 12px;
-      display: flex;
       align-items: flex-start;
-      gap: 10px;
     }
+    details.shop-row > summary.shop-row-layout { display: grid; }
     details.shop-row > summary::-webkit-details-marker { display: none; }
-    details.shop-row > summary .shop-checks { margin-top: 2px; }
     details.shop-row .row-main {
       flex: 1;
       min-width: 0;
@@ -1004,7 +1009,7 @@
     details.shop-row.to-buy .row-name b { color: var(--bg-dark); }
 
     details.shop-row .breakdown {
-      padding: 0 12px 12px 76px;
+      padding: 0 12px 12px;
       background: var(--page-bg);
     }
     details.shop-row .breakdown .usage {
@@ -1067,14 +1072,11 @@
 
     /* Свой список (extras) */
     .shop-extra-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
       padding: 10px 12px;
       border-bottom: 1px solid var(--border);
     }
+    .shop-extra-row.shop-row-layout { grid-template-columns: 1fr 100px 28px; }
     .shop-extra-row:last-child { border-bottom: 0; }
-    .shop-extra-row .shop-checks { flex-shrink: 0; }
     .shop-extra-row .text {
       flex: 1;
       word-break: break-word;
@@ -1151,12 +1153,12 @@
       gap: 6px;
     }
     details.shop-day .day-item {
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: 1fr auto 100px;
       gap: 10px;
+      align-items: center;
       padding: 8px 12px;
     }
-    details.shop-day .day-item .shop-checks { flex-shrink: 0; }
     details.shop-day .day-item .di-text {
       flex: 1;
       word-break: break-word;
@@ -2617,7 +2619,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 22;
+    const APP_BUILD = 23;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -3773,11 +3775,14 @@
     }
     function makeShopColHeader() {
       const h = document.createElement("div");
-      h.className = "shop-cols-head";
+      h.className = "shop-cols-head shop-row-layout";
       h.innerHTML =
         '<span class="shop-cols-spacer">Продукт</span>' +
-        '<span class="shop-col-lbl" title="Уже есть дома">Есть</span>' +
-        '<span class="shop-col-lbl" title="Нужно купить">Купить</span>';
+        '<div class="shop-col-labels">' +
+          '<span class="shop-col-lbl" title="Уже есть дома">Есть</span>' +
+          '<span class="shop-col-lbl" title="Нужно купить">Купить</span>' +
+        '</div>' +
+        '<span class="shop-cols-chev" aria-hidden="true"></span>';
       return h;
     }
     function getShoppingExtras() {
@@ -3976,8 +3981,7 @@
       else if (isNeed) det.classList.add("to-buy");
 
       const summary = document.createElement("summary");
-
-      summary.appendChild(buildShopDualChecks(item.key, haveSet, needSet, renderShoppingTab, true));
+      summary.className = "shop-row-layout";
 
       const main = document.createElement("div");
       main.className = "row-main";
@@ -4021,6 +4025,7 @@
       }
       main.appendChild(chips);
       summary.appendChild(main);
+      summary.appendChild(buildShopDualChecks(item.key, haveSet, needSet, renderShoppingTab, true));
 
       const chev = document.createElement("span");
       chev.className = "row-chev";
@@ -4073,7 +4078,7 @@
       const isHave = haveSet.has(key);
       const isNeed = needSet.has(key);
       const row = document.createElement("div");
-      row.className = "shop-extra-row" +
+      row.className = "shop-extra-row shop-row-layout" +
         (isHave ? " has-stock" : "") + (isNeed ? " to-buy" : "");
 
       const txt = document.createElement("span");
@@ -4091,8 +4096,8 @@
         renderShoppingTab();
       });
 
-      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
       row.appendChild(txt);
+      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
       row.appendChild(del);
       return row;
     }
@@ -4178,8 +4183,6 @@
       row.className = "day-item" +
         (isHave ? " has-stock" : "") + (isNeed ? " to-buy" : "");
 
-      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
-
       const txt = document.createElement("span");
       txt.className = "di-text";
       txt.textContent = u.name;
@@ -4191,6 +4194,8 @@
       else if (u.unit)   qty.textContent = u.unit;
       else               qty.textContent = "";
       row.appendChild(qty);
+
+      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
 
       return row;
     }
@@ -4327,7 +4332,7 @@
         const isHave = haveSet.has(item.key);
         const isNeed = needSet.has(item.key);
         const row = document.createElement("div");
-        row.className = "shop-item from-menu" +
+        row.className = "shop-item from-menu shop-row-layout" +
           (isHave ? " checked" : "") + (isNeed ? " to-buy" : "");
         const checks = buildShopDualChecks(item.key, haveSet, needSet, () => {}, false);
         checks.querySelectorAll("input").forEach(cb => { cb.disabled = true; });
@@ -4335,8 +4340,9 @@
         txt.className = "text";
         const unit = item.unit ? " " + item.unit : "";
         txt.textContent = item.name + (item.hasNumeric ? " — " + fmtQty(item.totalQty) + unit : "");
-        row.appendChild(checks);
         row.appendChild(txt);
+        row.appendChild(checks);
+        row.appendChild(document.createElement("span"));
         list.appendChild(row);
       });
     }
