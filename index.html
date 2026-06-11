@@ -784,6 +784,26 @@
     .today-menu-row .tm-meal { color: var(--muted); width: 64px; flex-shrink: 0; }
     .today-menu-row .tm-dish { flex: 1; }
 
+    .today-progress { margin-bottom: 16px; }
+    .today-shop-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .today-shop-row:last-child { border-bottom: 0; }
+    .today-shop-row .ts-name { flex: 1; min-width: 0; word-break: break-word; }
+    .today-shop-row .ts-qty {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
     /* День в списке заданий */
     .task-day.past { opacity: 0.55; }
     .task-day-count {
@@ -1627,28 +1647,38 @@
     </header>
 
     <main id="content">
-      <!-- TAB 1: MEASUREMENTS -->
-      <section class="tab-content" data-tab="measurements">
-        <div class="card">
-          <h2>Прогресс марафона</h2>
-          <div class="days-row" id="daysRow"></div>
-          <div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
-          <div class="progress-info">
-            <span id="progressText">День 0 из 0</span>
-            <span id="progressPercent">0%</span>
-          </div>
-        </div>
-
+      <!-- TAB: TODAY (стартовая) -->
+      <section class="tab-content" data-tab="today">
         <div class="card" id="todayCard">
           <div class="today-head">
             <h2 style="margin:0">Сегодня</h2>
             <span class="muted" id="todayDayLabel">—</span>
           </div>
+          <div class="today-progress">
+            <div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
+            <div class="progress-info">
+              <span id="progressText">День 0 из 0</span>
+              <span id="progressPercent">0%</span>
+            </div>
+          </div>
           <div class="today-section-title">Задания</div>
           <div id="todayTasks"></div>
-          <button type="button" class="btn btn--ghost btn--sm btn--block" id="todayAllTasksBtn" style="margin-top:8px">Все задания</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="todayAllTasksBtn" style="margin-top:8px">Все задания</button>
           <div class="today-section-title" style="margin-top:14px">Меню на сегодня</div>
           <div id="todayMenu"></div>
+          <div id="todayShopSection" hidden>
+            <div class="today-section-title" style="margin-top:14px">Продукты на ближайшие дни</div>
+            <div id="todayShopList"></div>
+            <button type="button" class="btn btn--ghost btn--sm" id="todayShopBtn" style="margin-top:8px">Весь список →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: MEASUREMENTS -->
+      <section class="tab-content" data-tab="measurements" hidden>
+        <div class="card">
+          <h2>Прогресс марафона</h2>
+          <div class="days-row" id="daysRow"></div>
         </div>
 
         <div class="card">
@@ -2098,13 +2128,9 @@
     </main>
 
     <nav id="bottomNav">
-      <button class="nav-btn active" data-tab="measurements" aria-label="Замеры">
-        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="13" width="3" height="6"/><rect x="10.5" y="9" width="3" height="10"/><rect x="16" y="5" width="3" height="14"/></svg>
-        <span class="label">Замеры</span>
-      </button>
-      <button class="nav-btn" data-tab="tasks" aria-label="Задания">
-        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 13l2 2 4-4"/></svg>
-        <span class="label">Задания</span>
+      <button class="nav-btn active" data-tab="today" aria-label="Сегодня">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <span class="label">Сегодня</span>
       </button>
       <button class="nav-btn" data-tab="menu" aria-label="Меню">
         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2-3-2V5a2 2 0 0 1 2-2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
@@ -2113,6 +2139,10 @@
       <button class="nav-btn" data-tab="shopping" aria-label="Список">
         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.95-1.55L21 7H6"/></svg>
         <span class="label">Список</span>
+      </button>
+      <button class="nav-btn" data-tab="measurements" aria-label="Замеры">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="13" width="3" height="6"/><rect x="10.5" y="9" width="3" height="10"/><rect x="16" y="5" width="3" height="14"/></svg>
+        <span class="label">Замеры</span>
       </button>
       <button class="nav-btn" data-tab="more" aria-label="Ещё">
         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
@@ -2291,7 +2321,7 @@
 
     const state = {
       data: null,
-      tab: "measurements",
+      tab: "today",
       menuWeek: 1
     };
 
@@ -2671,7 +2701,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 25;
+    const APP_BUILD = 26;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -2862,6 +2892,7 @@
       bindMarathonMeta();
       bindTaskForm();
       $("#todayAllTasksBtn").addEventListener("click", () => showTab("tasks"));
+      $("#todayShopBtn").addEventListener("click", () => showTab("shopping"));
       $("#appRefreshBtn").addEventListener("click", forceAppRefresh);
       $("#btnForceRefresh").addEventListener("click", forceAppRefresh);
       document.addEventListener("visibilitychange", softRefreshOnVisible);
@@ -2877,12 +2908,13 @@
         openCoachPage();
       } else if (hashTab === "archive") {
         showTab("more");
-      } else if (hashTab && ["measurements","tasks","menu","shopping","more"].includes(hashTab)) {
+      } else if (hashTab && ["today","measurements","tasks","menu","shopping","more"].includes(hashTab)) {
         showTab(hashTab);
       }
     }
 
     function renderAll() {
+      renderTodayTab();
       renderMeasurementsTab();
       renderTasksTab();
       renderMenuTab();
@@ -2937,12 +2969,70 @@
     }
 
     // ===========================================================
-    // ВКЛАДКА 1: Замеры
+    // ВКЛАДКА: Сегодня (стартовая)
+    // ===========================================================
+    function renderTodayTab() {
+      renderProgressBar();
+      renderTodayCard();
+    }
+
+    function filterUsagesByDateRange(usages, fromIso, toIso) {
+      return usages.filter(u => u.date >= fromIso && u.date <= toIso);
+    }
+
+    function renderTodayShopPreview() {
+      const section = $("#todayShopSection");
+      const list = $("#todayShopList");
+      if (!section || !list) return;
+
+      const todayIso = isoDate(new Date());
+      const end = new Date();
+      end.setDate(end.getDate() + 3);
+      const endIso = isoDate(end);
+
+      const haveSet = getShoppingHave();
+      const scoped = filterUsagesByDateRange(collectShoppingUsages(), todayIso, endIso);
+      const aggregated = aggregateShoppingUsages(scoped, todayIso);
+      const pending = aggregated.filter(a => !haveSet.has(a.key));
+
+      if (pending.length === 0) {
+        section.hidden = true;
+        list.innerHTML = "";
+        return;
+      }
+
+      section.hidden = false;
+      list.innerHTML = "";
+      pending.slice(0, 4).forEach(item => {
+        const row = document.createElement("div");
+        row.className = "today-shop-row";
+        const unit = item.unit ? " " + item.unit : "";
+        let qty = "";
+        if (item.hasNumeric) {
+          const n = item.futureQty > 0 ? item.futureQty : item.totalQty;
+          qty = fmtQty(n) + unit;
+        } else if (item.unit) {
+          qty = item.unit;
+        }
+        const name = document.createElement("span");
+        name.className = "ts-name";
+        name.textContent = item.name;
+        row.appendChild(name);
+        if (qty) {
+          const q = document.createElement("span");
+          q.className = "ts-qty";
+          q.textContent = qty;
+          row.appendChild(q);
+        }
+        list.appendChild(row);
+      });
+    }
+
+    // ===========================================================
+    // ВКЛАДКА: Замеры
     // ===========================================================
     function renderMeasurementsTab() {
       renderDaysRow();
-      renderProgressBar();
-      renderTodayCard();
       renderTodayForm();
       renderWeightChart();
       renderTotals();
@@ -3020,6 +3110,8 @@
         btn.addEventListener("click", () => showTab("menu"));
         menuWrap.appendChild(btn);
       }
+
+      renderTodayShopPreview();
     }
 
     // Один пункт задания с чекбоксом выполнения (используется в «Сегодня» и на вкладке)
@@ -4000,6 +4092,7 @@
       } else {
         renderShoppingByDay(list, scopedUsages, extras, haveSet, needSet, todayIso, filter);
       }
+      renderTodayShopPreview();
     }
 
     // ----- Режим «По продуктам» -----
