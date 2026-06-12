@@ -1275,10 +1275,15 @@
     }
 
     .ing-recipe-block {
-      max-height: min(160px, 30vh);
+      min-height: 200px;
+      max-height: min(320px, 42vh);
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      padding: 8px 10px;
+      background: var(--card);
+      border-radius: 10px;
+      border: 1px solid var(--border);
     }
     .ing-list {
       display: flex;
@@ -1926,24 +1931,51 @@
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
         padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        min-height: 280px;
       }
 
       body.coach-active .coach-form-ingredients > label {
         margin-bottom: 6px;
         display: block;
         font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      body.coach-active .coach-ing-wrap {
+        flex: 1;
+        min-height: 0;
+        gap: 10px;
       }
 
       body.coach-active .coach-ing-wrap .ing-recipe-block {
-        max-height: 110px;
-        padding: 6px 8px;
-        background: var(--card);
-        border-radius: 10px;
-        border: 1px solid var(--border);
+        flex: 1;
+        min-height: 220px;
+        max-height: min(400px, 48vh);
+        padding: 10px 12px;
+      }
+
+      body.coach-active .coach-ing-side {
+        flex-shrink: 0;
       }
 
       body.coach-active .coach-ing-side .ing-add--fields {
-        grid-template-columns: minmax(0, 1.5fr) 72px 60px 44px;
+        grid-template-columns: minmax(0, 2fr) 88px 72px 48px;
+      }
+
+      body.coach-active .ing-row {
+        grid-template-columns: 22px minmax(0, 2fr) 88px 72px 32px;
+        gap: 8px;
+      }
+
+      body.coach-active .ing-list-head {
+        grid-template-columns: 22px minmax(0, 2fr) 88px 72px 32px;
+        gap: 8px;
+      }
+
+      body.coach-active .ing-alt-weight {
+        grid-template-columns: 88px 72px;
       }
 
       body.coach-active .coach-ing-side .ing-kind {
@@ -3253,7 +3285,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 34;
+    const APP_BUILD = 35;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
