@@ -1281,15 +1281,44 @@
     }
     .ing-list:empty { margin: 0; }
     .ing-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) 72px 64px 28px;
+      gap: 6px;
       align-items: center;
-      gap: 8px;
       padding: 8px 0;
       border-bottom: 1px solid var(--border);
       font-size: 14px;
     }
     .ing-row:last-child { border-bottom: 0; }
     .ing-row .ing-text { flex: 1; }
+    .ing-row .ing-check {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      margin: 0;
+    }
+    .ing-row .ing-in,
+    .ing-add .ing-in {
+      width: 100%;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+    }
+    .ing-row .ing-in:focus,
+    .ing-add .ing-in:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+    .ing-row .ing-in[readonly] {
+      background: var(--card-inner);
+      color: var(--muted);
+    }
     .ing-row .del {
       background: none; border: 0;
       color: var(--muted);
@@ -1299,10 +1328,79 @@
       line-height: 1;
     }
     .ing-row .del:hover { color: var(--accent); }
+    .ing-row-alt {
+      grid-template-columns: 22px minmax(0, 1fr) 28px;
+      align-items: start;
+    }
+    .ing-row-alt-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .ing-alt-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ing-alt-opt {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 24px;
+      gap: 4px;
+      align-items: center;
+    }
+    .ing-alt-opt .ing-opt-del {
+      background: none;
+      border: 0;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .ing-alt-opt .ing-opt-del:hover { color: var(--accent); }
+    .ing-alt-weight {
+      display: grid;
+      grid-template-columns: 72px 64px;
+      gap: 6px;
+    }
+    .ing-alt-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .ing-list-head {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) 72px 64px 28px;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .ing-list-head[hidden] { display: none !important; }
+    .ing-total {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--accent-soft);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .ing-total[hidden] { display: none !important; }
     .ing-add {
       display: grid;
       grid-template-columns: 1.4fr 1fr 44px;
       gap: 8px;
+    }
+    .ing-add--fields {
+      grid-template-columns: minmax(0, 1.4fr) 72px 64px 44px;
     }
     .ing-add .btn { width: 100%; padding: 0; font-size: 22px; line-height: 1; }
 
@@ -1757,32 +1855,17 @@
         display: block;
       }
 
-      body.coach-active .coach-ing-wrap {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 14px;
-        align-items: start;
-      }
-
-      body.coach-active .coach-ing-side {
-        grid-column: 1;
-        grid-row: 1;
-      }
-
-      body.coach-active .coach-ing-wrap .ing-list {
-        grid-column: 2;
-        grid-row: 1;
-        max-height: 240px;
+      body.coach-active .coach-ing-wrap .ing-recipe-block {
+        max-height: 280px;
         overflow-y: auto;
-        margin-bottom: 0;
         padding: 8px 10px;
         background: var(--card);
         border-radius: 10px;
         border: 1px solid var(--border);
       }
 
-      body.coach-active .coach-ing-side .ing-add {
-        grid-template-columns: 1.5fr 1fr 48px;
+      body.coach-active .coach-ing-side .ing-add--fields {
+        grid-template-columns: minmax(0, 1.5fr) 80px 72px 48px;
       }
 
       body.coach-active .coach-form-detail {
@@ -2228,11 +2311,11 @@
             <div class="coach-form-ingredients">
               <label>Ингредиенты</label>
               <div class="coach-ing-wrap">
-                <div id="cIngList" class="ing-list"></div>
                 <div class="coach-ing-side">
-                  <div class="ing-add">
-                    <input id="cIngName" type="text" placeholder="Название (например, Овсянка)">
-                    <input id="cIngWeight" type="text" placeholder="Вес: 50 г / 200 мл / 1 шт">
+                  <div class="ing-add ing-add--fields">
+                    <input id="cIngName" class="ing-in" type="text" placeholder="Название">
+                    <input id="cIngQty" class="ing-in" type="text" inputmode="decimal" placeholder="Кол-во">
+                    <input id="cIngUnit" class="ing-in" type="text" placeholder="Ед.">
                     <button type="button" id="cIngAddBtn" class="btn btn--sm" aria-label="Добавить">+</button>
                   </div>
                   <div id="cIngKind" class="ing-kind">
@@ -2248,6 +2331,17 @@
                     <br><b>Альтернативный</b> — создаёт новую группу взаимозаменяемых вариантов.
                     Чтобы добавить ещё один вариант в группу, нажми <b>«+ вариант»</b> у строки в списке.
                   </div>
+                </div>
+                <div class="ing-recipe-block">
+                  <div id="cIngListHead" class="ing-list-head" hidden>
+                    <span></span>
+                    <span>Название</span>
+                    <span>Кол-во</span>
+                    <span>Ед.</span>
+                    <span></span>
+                  </div>
+                  <div id="cIngList" class="ing-list"></div>
+                  <div id="cIngTotal" class="ing-total" hidden></div>
                 </div>
               </div>
             </div>
@@ -3000,7 +3094,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 28;
+    const APP_BUILD = 29;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -4924,8 +5018,91 @@
     const coachForm = {
       ingredients: [],
       editing: null,        // { date, meal, dishIndex } — какое блюдо сейчас редактируется
-      addingToGroup: null   // null или { index: N } — индекс альт-группы в ingredients, в которую идёт следующий «+»
+      addingToGroup: null,  // null или { index: N } — индекс альт-группы в ingredients, в которую идёт следующий «+»
+      checkedIng: new Set() // индексы отмеченных ингредиентов для подсчёта итога
     };
+
+    function coachIngWeightStr(qty, unit) {
+      const q = (qty || "").trim();
+      const u = (unit || "").trim();
+      if (!q && !u) return "";
+      if (!q) return u;
+      return q + (u ? " " + u : "");
+    }
+
+    function entryToIngFields(entry) {
+      if (typeof entry === "string") {
+        const p = parseIngredient(entry);
+        return {
+          name: p.name || "",
+          qty: p.qty != null ? String(p.qty) : "",
+          unit: p.unit || ""
+        };
+      }
+      if (entry && typeof entry === "object" && entry.alt && Array.isArray(entry.options)) {
+        const w = parseWeightStr(entry.weight || "");
+        return {
+          isAlt: true,
+          options: entry.options.filter(s => typeof s === "string"),
+          qty: w.qty != null ? String(w.qty) : "",
+          unit: w.unit || ""
+        };
+      }
+      return { name: "", qty: "", unit: "" };
+    }
+
+    function syncMainIngredient(idx, name, qty, unit) {
+      const n = (name || "").trim();
+      const w = coachIngWeightStr(qty, unit);
+      coachForm.ingredients[idx] = w ? (n + " — " + w) : n;
+    }
+
+    function syncAltIngredient(idx, options, qty, unit) {
+      const entry = coachForm.ingredients[idx];
+      if (!entry || !entry.alt) return;
+      entry.options = options.map(s => (s || "").trim()).filter(Boolean);
+      const w = coachIngWeightStr(qty, unit);
+      if (w) entry.weight = w;
+      else delete entry.weight;
+    }
+
+    function shiftCheckedIngAfterDelete(deletedIdx) {
+      const next = new Set();
+      coachForm.checkedIng.forEach(i => {
+        if (i < deletedIdx) next.add(i);
+        else if (i > deletedIdx) next.add(i - 1);
+      });
+      coachForm.checkedIng = next;
+    }
+
+    function updateIngTotal() {
+      const el = $("#cIngTotal");
+      if (!el) return;
+      const checked = coachForm.checkedIng;
+      if (!checked || checked.size === 0) {
+        el.hidden = true;
+        return;
+      }
+      const byUnit = {};
+      coachForm.ingredients.forEach((entry, idx) => {
+        if (!checked.has(idx)) return;
+        const parsed = parseIngredientEntry(entry);
+        if (!parsed || parsed.qty == null) return;
+        const unit = (parsed.unit || "").trim() || "—";
+        byUnit[unit] = (byUnit[unit] || 0) + parsed.qty;
+      });
+      const keys = Object.keys(byUnit);
+      if (!keys.length) {
+        el.hidden = true;
+        return;
+      }
+      el.hidden = false;
+      const parts = keys.map(u => {
+        const n = fmtQty(byUnit[u]);
+        return u === "—" ? String(n) : (n + " " + u);
+      });
+      el.textContent = "Итого (отмеченные): " + parts.join(" + ");
+    }
 
     function setKindRadio(kind) {
       const k = normalizeKind(kind);
@@ -5062,8 +5239,9 @@
         if (e.key === "Enter") { e.preventDefault(); coachAddIngredient(); }
       };
       $("#cIngName").addEventListener("keydown", onIngEnter);
-      $("#cIngWeight").addEventListener("keydown", onIngEnter);
-      ["cIngName", "cIngWeight", "cRecipe"].forEach(id => {
+      $("#cIngQty").addEventListener("keydown", onIngEnter);
+      $("#cIngUnit").addEventListener("keydown", onIngEnter);
+      ["cIngName", "cIngQty", "cIngUnit", "cRecipe"].forEach(id => {
         const el = $("#" + id);
         if (el) el.addEventListener("focus", () => scrollCoachFieldIntoView(el));
       });
@@ -5939,9 +6117,11 @@
       const targetBox = $("#cIngTarget");
       $("#cIngTargetName").textContent = entry.options.join(" или ") + (entry.weight ? " — " + entry.weight : "");
       targetBox.hidden = false;
-      // Заблокировать вес — он общий для группы; имя — пустое, ждём ввода
-      $("#cIngWeight").value = entry.weight || "";
-      $("#cIngWeight").readOnly = true;
+      const w = parseWeightStr(entry.weight || "");
+      $("#cIngQty").value = w.qty != null ? String(w.qty) : "";
+      $("#cIngUnit").value = w.unit || "";
+      $("#cIngQty").readOnly = true;
+      $("#cIngUnit").readOnly = true;
       $("#cIngName").value = "";
       $("#cIngName").placeholder = "Добавить вариант к группе";
       setCIngKind("alt");
@@ -5952,16 +6132,20 @@
     function cancelIngAddingMode() {
       coachForm.addingToGroup = null;
       $("#cIngTarget").hidden = true;
-      $("#cIngWeight").readOnly = false;
-      $("#cIngWeight").value = "";
-      $("#cIngName").placeholder = "Название (например, Овсянка)";
+      $("#cIngQty").readOnly = false;
+      $("#cIngUnit").readOnly = false;
+      $("#cIngQty").value = "";
+      $("#cIngUnit").value = "";
+      $("#cIngName").placeholder = "Название";
       $("#cIngName").value = "";
       setCIngKind("main");
     }
 
     function coachAddIngredient() {
       const name = ($("#cIngName").value || "").trim();
-      const weight = ($("#cIngWeight").value || "").trim();
+      const qty = ($("#cIngQty").value || "").trim();
+      const unit = ($("#cIngUnit").value || "").trim();
+      const weight = coachIngWeightStr(qty, unit);
       if (!name) { $("#cIngName").focus(); return; }
 
       // Если активен режим «добавляю в группу» — подклеиваем к существующей альт-группе.
@@ -5976,7 +6160,6 @@
           $("#cIngName").focus();
           return;
         }
-        // Если по какой-то причине целевая группа исчезла — выходим из режима и продолжаем как обычно.
         cancelIngAddingMode();
       }
 
@@ -5988,13 +6171,17 @@
       } else {
         entry = weight ? (name + " — " + weight) : name;
       }
+      const newIdx = coachForm.ingredients.length;
       coachForm.ingredients.push(entry);
 
       $("#cIngName").value = "";
-      $("#cIngWeight").value = "";
+      $("#cIngQty").value = "";
+      $("#cIngUnit").value = "";
       setCIngKind("main");
       $("#cIngName").focus();
       renderCoachIngList();
+      coachForm.checkedIng.add(newIdx);
+      updateIngTotal();
     }
 
     function scrollCoachFieldIntoView(el) {
@@ -6006,34 +6193,132 @@
 
     function renderCoachIngList() {
       const list = $("#cIngList");
+      const head = $("#cIngListHead");
       list.innerHTML = "";
-      coachForm.ingredients.forEach((entry, idx) => {
-        const row = document.createElement("div");
-        row.className = "ing-row";
-        const isAlt = entry && typeof entry === "object" && entry.alt;
-        if (isAlt) row.classList.add("ing-row-alt");
+      const hasItems = coachForm.ingredients.length > 0;
+      if (head) head.hidden = !hasItems;
 
-        const t = document.createElement("span");
-        t.className = "ing-text";
+      coachForm.ingredients.forEach((entry, idx) => {
+        const fields = entryToIngFields(entry);
+        const isAlt = !!fields.isAlt;
+        const row = document.createElement("div");
+        row.className = "ing-row" + (isAlt ? " ing-row-alt" : "");
+
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.className = "ing-check";
+        chk.checked = coachForm.checkedIng.has(idx);
+        chk.title = "Учитывать в итоговом весе";
+        chk.addEventListener("change", () => {
+          if (chk.checked) coachForm.checkedIng.add(idx);
+          else coachForm.checkedIng.delete(idx);
+          updateIngTotal();
+        });
+        row.appendChild(chk);
+
         if (isAlt) {
+          const body = document.createElement("div");
+          body.className = "ing-row-alt-body";
+
           const badge = document.createElement("span");
           badge.className = "dish-badge-sm alt";
           badge.textContent = "альт.";
-          t.appendChild(badge);
-          t.appendChild(document.createTextNode(" " + ingredientToLabel(entry)));
-        } else {
-          t.textContent = ingredientToLabel(entry);
-        }
-        row.appendChild(t);
+          body.appendChild(badge);
 
-        if (isAlt) {
+          const optsBox = document.createElement("div");
+          optsBox.className = "ing-alt-options";
+          const options = fields.options.slice();
+
+          const renderAltOptions = () => {
+            optsBox.innerHTML = "";
+            options.forEach((optName, optIdx) => {
+              const optRow = document.createElement("div");
+              optRow.className = "ing-alt-opt";
+              const nameIn = document.createElement("input");
+              nameIn.type = "text";
+              nameIn.className = "ing-in ing-alt-name";
+              nameIn.value = optName;
+              nameIn.placeholder = "Вариант";
+              nameIn.addEventListener("input", () => {
+                options[optIdx] = nameIn.value;
+                syncAltIngredient(idx, options, qtyIn.value, unitIn.value);
+              });
+              optRow.appendChild(nameIn);
+              if (options.length > 1) {
+                const optDel = document.createElement("button");
+                optDel.type = "button";
+                optDel.className = "ing-opt-del";
+                optDel.textContent = "×";
+                optDel.title = "Удалить вариант";
+                optDel.addEventListener("click", () => {
+                  options.splice(optIdx, 1);
+                  syncAltIngredient(idx, options, qtyIn.value, unitIn.value);
+                  renderAltOptions();
+                });
+                optRow.appendChild(optDel);
+              }
+              optsBox.appendChild(optRow);
+            });
+          };
+
+          const weightRow = document.createElement("div");
+          weightRow.className = "ing-alt-weight";
+          const qtyIn = document.createElement("input");
+          qtyIn.type = "text";
+          qtyIn.className = "ing-in ing-in-qty";
+          qtyIn.inputMode = "decimal";
+          qtyIn.placeholder = "Кол-во";
+          qtyIn.value = fields.qty;
+          const unitIn = document.createElement("input");
+          unitIn.type = "text";
+          unitIn.className = "ing-in ing-in-unit";
+          unitIn.placeholder = "Ед.";
+          unitIn.value = fields.unit;
+          const onAltWeight = () => syncAltIngredient(idx, options, qtyIn.value, unitIn.value);
+          qtyIn.addEventListener("input", onAltWeight);
+          unitIn.addEventListener("input", onAltWeight);
+          weightRow.appendChild(qtyIn);
+          weightRow.appendChild(unitIn);
+
+          const actions = document.createElement("div");
+          actions.className = "ing-alt-actions";
           const addBtn = document.createElement("button");
           addBtn.className = "ing-addmore";
           addBtn.type = "button";
           addBtn.title = "Добавить ещё вариант к этой группе";
           addBtn.textContent = "+ вариант";
           addBtn.addEventListener("click", () => startIngAddingMode(idx));
-          row.appendChild(addBtn);
+          actions.appendChild(addBtn);
+
+          renderAltOptions();
+          body.appendChild(optsBox);
+          body.appendChild(weightRow);
+          body.appendChild(actions);
+          row.appendChild(body);
+        } else {
+          const nameIn = document.createElement("input");
+          nameIn.type = "text";
+          nameIn.className = "ing-in ing-in-name";
+          nameIn.value = fields.name;
+          nameIn.placeholder = "Название";
+          const qtyIn = document.createElement("input");
+          qtyIn.type = "text";
+          qtyIn.className = "ing-in ing-in-qty";
+          qtyIn.inputMode = "decimal";
+          qtyIn.placeholder = "Кол-во";
+          qtyIn.value = fields.qty;
+          const unitIn = document.createElement("input");
+          unitIn.type = "text";
+          unitIn.className = "ing-in ing-in-unit";
+          unitIn.placeholder = "Ед.";
+          unitIn.value = fields.unit;
+          const onSync = () => syncMainIngredient(idx, nameIn.value, qtyIn.value, unitIn.value);
+          nameIn.addEventListener("input", onSync);
+          qtyIn.addEventListener("input", onSync);
+          unitIn.addEventListener("input", onSync);
+          row.appendChild(nameIn);
+          row.appendChild(qtyIn);
+          row.appendChild(unitIn);
         }
 
         const del = document.createElement("button");
@@ -6043,17 +6328,21 @@
         del.title = isAlt ? "Удалить всю альт-группу" : "Удалить";
         del.addEventListener("click", () => {
           coachForm.ingredients.splice(idx, 1);
+          shiftCheckedIngAfterDelete(idx);
           if (coachForm.addingToGroup) {
             if (coachForm.addingToGroup.index === idx) cancelIngAddingMode();
             else if (coachForm.addingToGroup.index > idx) coachForm.addingToGroup.index -= 1;
           }
           renderCoachIngList();
+          updateIngTotal();
         });
         row.appendChild(del);
 
         list.appendChild(row);
       });
-      if (coachForm.ingredients.length > 0) {
+
+      updateIngTotal();
+      if (hasItems) {
         const addRow = $("#cIngAddBtn") && $("#cIngAddBtn").closest(".ing-add");
         scrollCoachFieldIntoView(addRow || list.lastElementChild);
       }
@@ -6061,6 +6350,7 @@
 
     function coachClearForm() {
       coachForm.ingredients = [];
+      coachForm.checkedIng = new Set();
       coachForm.editing = null;
       $("#cTitle").value = "";
       $("#cRecipe").value = "";
@@ -6103,6 +6393,7 @@
           })
         : [];
       coachForm.editing = { date: dateIso, meal: mealKey, dishIndex };
+      coachForm.checkedIng = new Set();
       cancelIngAddingMode();
       updateCoachDateInfo();
       updateOrderPlaceholder();
