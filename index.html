@@ -1626,18 +1626,75 @@
       gap: 8px;
     }
     .coach-week-table-wrap { display: none; }
+    .coach-desk-heading { display: none; }
+    .header-coach-desk { display: none; }
 
     @media (min-width: 1024px) {
       body.coach-active #app {
         max-width: 1100px;
       }
 
+      body.coach-active #topBar {
+        max-width: 1100px;
+      }
+
+      body.coach-active #bottomNav {
+        display: none;
+      }
+
+      body.coach-active main#content {
+        padding-bottom: 24px;
+      }
+
+      body.coach-active .header-coach-desk {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: auto;
+        margin-right: 12px;
+      }
+
+      body.coach-active .header-coach-badge {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        background: var(--accent-soft);
+        padding: 4px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      body.coach-active .card.coach-header {
+        display: none;
+      }
+
+      body.coach-active .coach-desk-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      body.coach-active .coach-desk-heading-meta {
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--muted);
+      }
+
       body.coach-active .coach-workspace {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
         gap: 16px;
         align-items: start;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
       }
 
       body.coach-active .coach-col-form .coach-panel > summary,
@@ -1648,22 +1705,62 @@
       body.coach-active .coach-col-form .coach-panel,
       body.coach-active .coach-col-list .coach-panel {
         margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - var(--header-h) - 56px);
       }
 
       body.coach-active .coach-col-form .coach-panel[open] .coach-panel-body,
       body.coach-active .coach-col-list .coach-panel[open] .coach-panel-body {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
       }
 
       body.coach-active .coach-col-list .coach-panel-body {
-        max-height: calc(100vh - 200px);
-        overflow-y: auto;
+        max-height: none;
+      }
+
+      body.coach-active .coach-desk-hide,
+      body.coach-active .coach-list-subhead,
+      body.coach-active #coachForm .coach-hint-long {
+        display: none !important;
+      }
+
+      /* Форма блюда */
+      body.coach-active .coach-form-meta {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 88px;
+        gap: 12px;
+        align-items: start;
+      }
+
+      body.coach-active .coach-form-date-meal {
+        display: contents;
+      }
+
+      body.coach-active .coach-form-dateinfo {
+        margin-top: -4px !important;
+      }
+
+      body.coach-active .coach-form-ingredients {
+        background: var(--card-inner);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+      }
+
+      body.coach-active .coach-form-ingredients > label {
+        margin-bottom: 8px;
+        display: block;
       }
 
       body.coach-active .coach-ing-wrap {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 16px;
+        gap: 14px;
         align-items: start;
       }
 
@@ -1675,19 +1772,56 @@
       body.coach-active .coach-ing-wrap .ing-list {
         grid-column: 2;
         grid-row: 1;
-        max-height: 280px;
+        max-height: 240px;
         overflow-y: auto;
         margin-bottom: 0;
-        padding: 4px 0;
+        padding: 8px 10px;
+        background: var(--card);
+        border-radius: 10px;
+        border: 1px solid var(--border);
       }
 
       body.coach-active .coach-ing-side .ing-add {
         grid-template-columns: 1.5fr 1fr 48px;
       }
 
+      body.coach-active .coach-form-detail {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+      }
+
+      body.coach-active .coach-form-recipe textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      body.coach-active .coach-form-nutrition {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      body.coach-active .coach-form-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin-top: auto;
+        padding-top: 12px;
+        background: linear-gradient(to top, var(--card) 70%, transparent);
+      }
+
+      body.coach-active #coachForm .ing-add,
+      body.coach-active #coachForm .ing-list .ing-row:last-child,
+      body.coach-active #coachForm textarea,
+      body.coach-active #coachForm .coach-form-actions {
+        scroll-margin-bottom: 16px;
+      }
+
       body.coach-active .coach-week-table-wrap {
         display: block;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         overflow-x: auto;
       }
 
@@ -1697,6 +1831,28 @@
 
       body.coach-active #coachList .muted[style*="padding"] {
         display: none;
+      }
+
+      body.coach-active #cPublishBtn {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin-top: 12px;
+      }
+
+      body.coach-active .coach-weeks {
+        margin-top: 4px;
+      }
+
+      body.coach-active .coach-desk-extra {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      body.coach-active .coach-desk-extra > .coach-panel:first-child {
+        grid-column: 1 / -1;
       }
     }
 
@@ -1763,6 +1919,10 @@
   <div id="app">
     <header id="topBar">
       <div class="title" id="appTitle">Марафон</div>
+      <div class="header-coach-desk">
+        <span class="header-coach-badge">Режим коуча</span>
+        <button type="button" class="btn btn--ghost btn--sm" id="coachHeaderExitBtn">Выйти</button>
+      </div>
       <div class="header-right">
         <button type="button" class="header-refresh" id="appRefreshBtn" title="Обновить данные" aria-label="Обновить">↻</button>
         <div class="day-indicator" id="dayIndicator">—</div>
@@ -2011,6 +2171,7 @@
         <div class="coach-workspace">
         <!-- 2. Создание меню -->
         <div class="coach-col coach-col-form">
+        <h3 class="coach-desk-heading">Создание меню</h3>
         <details class="coach-panel" id="coachPanelForm">
           <summary>
             <span class="coach-panel-title">Создание меню</span>
@@ -2018,23 +2179,32 @@
             <span class="chev"></span>
           </summary>
           <div class="coach-panel-body">
-          <form id="coachForm" class="stack" autocomplete="off">
-            <div class="grid-2">
-              <div>
-                <label for="cDate">Дата</label>
-                <input id="cDate" type="date" required>
+          <form id="coachForm" class="stack coach-form" autocomplete="off">
+            <div class="coach-form-meta">
+              <div class="grid-2 coach-form-date-meal">
+                <div>
+                  <label for="cDate">Дата</label>
+                  <input id="cDate" type="date" required>
+                </div>
+                <div>
+                  <label for="cMeal">Приём пищи</label>
+                  <select id="cMeal">
+                    <option value="breakfast">🌅 Завтрак</option>
+                    <option value="lunch">☀️ Обед</option>
+                    <option value="snack">🍎 Перекус</option>
+                    <option value="dinner">🌙 Ужин</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label for="cMeal">Приём пищи</label>
-                <select id="cMeal">
-                  <option value="breakfast">🌅 Завтрак</option>
-                  <option value="lunch">☀️ Обед</option>
-                  <option value="snack">🍎 Перекус</option>
-                  <option value="dinner">🌙 Ужин</option>
-                </select>
+              <div class="coach-form-order">
+                <label for="cOrder">Порядок</label>
+                <input id="cOrder" type="number" min="1" step="1" placeholder="авто">
+                <div class="form-hint coach-hint-long">
+                  Меньше число — раньше в дне. Пусто = авто: завтрак&nbsp;10, обед&nbsp;20, перекус&nbsp;30, ужин&nbsp;40.
+                </div>
               </div>
             </div>
-            <div class="muted" id="cDateInfo" style="font-size:12px">—</div>
+            <div class="muted coach-form-dateinfo" id="cDateInfo" style="font-size:12px">—</div>
 
             <div>
               <label for="cTitle">Название блюда</label>
@@ -2042,29 +2212,20 @@
             </div>
 
             <div>
-              <label>Тип блюда в этом приёме пищи</label>
+              <label>Тип блюда</label>
               <div id="cKind" class="kind-radios">
                 <label><input type="radio" name="cKind" value="main" checked> Основное</label>
                 <label><input type="radio" name="cKind" value="addon"> Дополнение</label>
                 <label><input type="radio" name="cKind" value="alt"> Альтернатива</label>
               </div>
-              <div class="form-hint">
+              <div class="form-hint coach-hint-long">
                 <b>Основное</b> — главное блюдо приёма пищи (одно на слот).
                 <b>Дополнение</b> — обязательная добавка (соус, чай, гарнир) — всегда вместе с основным.
                 <b>Альтернатива</b> — вариант на выбор «по кошельку»; участник выбирает один.
               </div>
             </div>
 
-            <div>
-              <label for="cOrder">Порядок в дне</label>
-              <input id="cOrder" type="number" min="1" step="1" placeholder="по умолчанию 30">
-              <div class="form-hint">
-                Меньше число — раньше в дне. Чтобы поставить <b>перекус до обеда</b>, укажи, например, <b>15</b>.
-                Если оставить пустым, используется значение по умолчанию: завтрак&nbsp;10, обед&nbsp;20, перекус&nbsp;30, ужин&nbsp;40.
-              </div>
-            </div>
-
-            <div>
+            <div class="coach-form-ingredients">
               <label>Ингредиенты</label>
               <div class="coach-ing-wrap">
                 <div id="cIngList" class="ing-list"></div>
@@ -2082,7 +2243,7 @@
                     <span>Добавляешь вариант в группу: <b id="cIngTargetName">—</b></span>
                     <button type="button" id="cIngTargetCancel" class="btn btn--ghost btn--sm">Отменить</button>
                   </div>
-                  <div class="form-hint">
+                  <div class="form-hint coach-hint-long">
                     <b>Основной</b> — обязательный ингредиент (попадёт в корзину как обычно).
                     <br><b>Альтернативный</b> — создаёт новую группу взаимозаменяемых вариантов.
                     Чтобы добавить ещё один вариант в группу, нажми <b>«+ вариант»</b> у строки в списке.
@@ -2091,23 +2252,24 @@
               </div>
             </div>
 
-            <div>
-              <label for="cRecipe">Рецепт</label>
-              <textarea id="cRecipe" rows="3" placeholder="Шаги приготовления (необязательно)"></textarea>
+            <div class="coach-form-detail">
+              <div class="coach-form-recipe">
+                <label for="cRecipe">Рецепт</label>
+                <textarea id="cRecipe" rows="3" placeholder="Шаги приготовления (необязательно)"></textarea>
+              </div>
+              <div class="coach-form-nutrition grid-2">
+                <div>
+                  <label for="cKbju">КБЖУ</label>
+                  <input id="cKbju" type="text" placeholder="Б 9 г · Ж 8 г · У 55 г">
+                </div>
+                <div>
+                  <label for="cCalories">Калории, ккал</label>
+                  <input id="cCalories" type="number" min="0" placeholder="340">
+                </div>
+              </div>
             </div>
 
-            <div class="grid-2">
-              <div>
-                <label for="cKbju">КБЖУ</label>
-                <input id="cKbju" type="text" placeholder="Б 9 г · Ж 8 г · У 55 г">
-              </div>
-              <div>
-                <label for="cCalories">Калории, ккал</label>
-                <input id="cCalories" type="number" min="0" placeholder="340">
-              </div>
-            </div>
-
-            <div class="grid-2">
+            <div class="coach-form-actions grid-2">
               <button type="button" class="btn btn--ghost" id="cClearBtn">Очистить форму</button>
               <button type="submit" class="btn">Сохранить блюдо</button>
             </div>
@@ -2118,6 +2280,7 @@
 
         <!-- 3. Заполненные блюда и публикация -->
         <div class="coach-col coach-col-list">
+        <h3 class="coach-desk-heading">Неделя и публикация <span class="coach-desk-heading-meta" id="coachDeskListMeta"></span></h3>
         <details class="coach-panel" id="coachPanelList">
           <summary>
             <span class="coach-panel-title">Заполненные блюда и публикация</span>
@@ -2125,12 +2288,12 @@
             <span class="chev"></span>
           </summary>
           <div class="coach-panel-body">
-            <div class="muted" style="font-size:13px; margin-bottom:10px">
+            <div class="muted coach-desk-hide" style="font-size:13px; margin-bottom:10px">
               Меню остаётся <b>черновиком</b> на устройстве. На сервер день уходит по кнопке
               <b>«Опубл.»</b> у нужного дня или <b>«Опубликовать всё»</b> ниже
               (в <code id="pubRepoName">data.json</code>).
             </div>
-            <div class="shopping-header">
+            <div class="shopping-header coach-list-subhead">
               <h3 style="margin:0">Список по дням</h3>
               <span class="muted" id="coachListCount">—</span>
             </div>
@@ -2144,6 +2307,7 @@
         </div>
         </div>
 
+        <div class="coach-desk-extra">
         <!-- 4. Задания: создание и публикация -->
         <details class="coach-panel">
           <summary>
@@ -2258,6 +2422,7 @@
             </div>
           </div>
         </details>
+        </div>
       </section>
     </main>
 
@@ -2835,7 +3000,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 27;
+    const APP_BUILD = 28;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -4819,6 +4984,7 @@
 
       // 5) Кнопка «Выйти» — завершает сессию коуча
       $("#coachExitBtn").addEventListener("click", exitCoachSession);
+      $("#coachHeaderExitBtn").addEventListener("click", exitCoachSession);
     }
 
     function exitCoachSession() {
@@ -6096,9 +6262,12 @@
       let totalMeals = 0;
       allDates.forEach(d => { totalMeals += Object.keys(local[d] || published[d] || {}).length; });
 
-      $("#coachListCount").textContent = totalDays
+      const countText = totalDays
         ? totalDays + " дн. / " + totalMeals + " блюд"
         : "пусто";
+      $("#coachListCount").textContent = countText;
+      const deskMeta = $("#coachDeskListMeta");
+      if (deskMeta) deskMeta.textContent = countText !== "пусто" ? countText : "";
 
       if (totalDays === 0) {
         list.innerHTML = '<div class="muted" style="padding:12px 0">Ещё ничего не заполнено. Заполните форму слева — блюда появятся здесь и сразу попадут на вкладку «Меню».</div>';
