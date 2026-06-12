@@ -2011,6 +2011,30 @@
     .coach-week-table td.cell.filled {
       font-weight: 500;
     }
+    .coach-week-table td.cell-active {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+      background: var(--accent-soft);
+    }
+
+    .coach-form-mode {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--peach-soft);
+      border: 1px solid rgba(233, 175, 163, 0.45);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .coach-form-mode[hidden] { display: none !important; }
+    .coach-form-mode-text {
+      min-width: 0;
+      font-weight: 500;
+    }
+    .coach-form-mode-text b { color: var(--peach-dark); }
 
     @media print {
       :root { --bg-dark: #000; }
@@ -2327,6 +2351,11 @@
             </div>
             <div class="muted coach-form-dateinfo" id="cDateInfo" style="font-size:12px">—</div>
 
+            <div id="coachFormMode" class="coach-form-mode" hidden>
+              <span class="coach-form-mode-text" id="coachFormModeText"></span>
+              <button type="button" class="btn btn--ghost btn--sm" id="coachNewDishBtn">Новое блюдо</button>
+            </div>
+
             <div>
               <label for="cTitle">Название блюда</label>
               <input id="cTitle" type="text" placeholder="Например: Овсяная каша с ягодами" required>
@@ -2403,7 +2432,7 @@
 
             <div class="coach-form-actions grid-2">
               <button type="button" class="btn btn--ghost" id="cClearBtn">Очистить форму</button>
-              <button type="submit" class="btn">Сохранить блюдо</button>
+              <button type="submit" class="btn" id="coachSubmitBtn">Сохранить блюдо</button>
             </div>
           </form>
           </div>
@@ -3137,7 +3166,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 30;
+    const APP_BUILD = 31;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -5301,6 +5330,9 @@
         updateCoachDateInfo();
         updateOrderPlaceholder();
       });
+      $("#cTitle").addEventListener("input", () => {
+        if (coachForm.editing) syncCoachFormModeUI();
+      });
       updateOrderPlaceholder();
 
       $("#cIngAddBtn").addEventListener("click", coachAddIngredient);
@@ -5318,7 +5350,8 @@
         cancelIngAddingMode();
       });
 
-      $("#cClearBtn").addEventListener("click", coachClearForm);
+      $("#cClearBtn").addEventListener("click", () => startNewCoachDish());
+      $("#coachNewDishBtn").addEventListener("click", () => startNewCoachDish());
 
       f.addEventListener("submit", e => {
         e.preventDefault();
@@ -5367,7 +5400,7 @@
         setCoachDish(date, meal, dish, replaceIndex, slotOrderVal);
 
         toast(replaceIndex != null ? "Сохранено" : "Добавлено к приёму пищи");
-        coachClearForm();
+        startNewCoachDish(date, meal);
         renderCoachList();
         renderPublishUI();
         renderMenuTab();
@@ -6417,10 +6450,40 @@
       }
     }
 
-    function coachClearForm() {
+    function isSameCoachEditing(dateIso, mealKey, dishIndex) {
+      const e = coachForm.editing;
+      return !!(e && e.date === dateIso && e.meal === mealKey && e.dishIndex === dishIndex);
+    }
+
+    function syncCoachFormModeUI() {
+      const box = $("#coachFormMode");
+      const text = $("#coachFormModeText");
+      const submit = $("#coachSubmitBtn");
+      if (!box || !text) return;
+      if (coachForm.editing) {
+        const title = $("#cTitle").value.trim() || "блюдо";
+        text.innerHTML = "Редактирование: <b>" + escHTML(title) + "</b>";
+        box.hidden = false;
+        if (submit) submit.textContent = "Сохранить изменения";
+      } else {
+        box.hidden = true;
+        if (submit) submit.textContent = "Сохранить блюдо";
+      }
+    }
+
+    function refreshCoachWeekTableHighlight() {
+      const ctx = coachForm.weekTableCtx;
+      if (ctx) renderCoachWeekTable(ctx.activeWeek, ctx.local);
+    }
+
+    function startNewCoachDish(dateIso, mealKey) {
+      const date = dateIso || $("#cDate").value || isoDate(new Date());
+      const meal = mealKey || $("#cMeal").value || "breakfast";
+      coachForm.editing = null;
       coachForm.ingredients = [];
       coachForm.checkedIng = new Set();
-      coachForm.editing = null;
+      $("#cDate").value = date;
+      $("#cMeal").value = meal;
       $("#cTitle").value = "";
       $("#cRecipe").value = "";
       $("#cKbju").value = "";
@@ -6428,8 +6491,16 @@
       $("#cOrder").value = "";
       setKindRadio("main");
       cancelIngAddingMode();
+      updateCoachDateInfo();
       updateOrderPlaceholder();
       renderCoachIngList();
+      syncCoachFormModeUI();
+      refreshCoachWeekTableHighlight();
+    }
+
+    function coachClearForm() {
+      startNewCoachDish();
+      $("#cTitle").focus();
     }
 
     // Заполнить форму конкретным блюдом из слота (dishIndex — его индекс в массиве dishes).
@@ -6467,6 +6538,8 @@
       updateCoachDateInfo();
       updateOrderPlaceholder();
       renderCoachIngList();
+      syncCoachFormModeUI();
+      refreshCoachWeekTableHighlight();
       const formEl = $("#coachForm");
       if (formEl) formEl.scrollIntoView({ behavior: "smooth", block: "start" });
       else window.scrollTo({ top: 0, behavior: "smooth" });
@@ -6476,6 +6549,7 @@
       const wrap = $("#coachWeekTable");
       if (!wrap) return;
       wrap.innerHTML = "";
+      coachForm.weekTableCtx = { activeWeek, local };
 
       if (!activeWeek || typeof activeWeek !== "number" || !isCoachDesktopLayout()) {
         wrap.hidden = true;
@@ -6526,16 +6600,20 @@
             td.classList.add("filled");
             td.textContent = dish.title || "—";
             const dishIndex = dishes.indexOf(dish);
-            td.addEventListener("click", () => populateCoachForm(iso, m.key, dish, dishIndex));
+            if (isSameCoachEditing(iso, m.key, dishIndex)) td.classList.add("cell-active");
+            td.addEventListener("click", () => {
+              if (isSameCoachEditing(iso, m.key, dishIndex)) {
+                startNewCoachDish(iso, m.key);
+                $("#cTitle").focus();
+                return;
+              }
+              populateCoachForm(iso, m.key, dish, dishIndex);
+            });
           } else {
             td.classList.add("empty");
             td.textContent = "пусто";
             td.addEventListener("click", () => {
-              $("#cDate").value = iso;
-              $("#cMeal").value = m.key;
-              updateCoachDateInfo();
-              updateOrderPlaceholder();
-              coachClearForm();
+              startNewCoachDish(iso, m.key);
               $("#cTitle").focus();
             });
           }
@@ -6797,7 +6875,13 @@
       if (!isDeletedDay) {
         const edit = document.createElement("button");
         edit.className = "cm-edit"; edit.type = "button"; edit.textContent = "Изм.";
-        edit.addEventListener("click", () => populateCoachForm(date, mealKey, dish, dishIndex));
+        edit.addEventListener("click", () => {
+          if (isSameCoachEditing(date, mealKey, dishIndex)) {
+            startNewCoachDish(date, mealKey);
+            return;
+          }
+          populateCoachForm(date, mealKey, dish, dishIndex);
+        });
         row.appendChild(edit);
 
         const del = document.createElement("button");
