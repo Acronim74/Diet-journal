@@ -1617,6 +1617,129 @@
     /* PRINT-ONLY REPORT */
     #print-report { display: none; }
 
+    /* ============================================================
+       Коуч: ПК-режим (только body.coach-active + ≥1024px)
+       ============================================================ */
+    .coach-ing-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .coach-week-table-wrap { display: none; }
+
+    @media (min-width: 1024px) {
+      body.coach-active #app {
+        max-width: 1100px;
+      }
+
+      body.coach-active .coach-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 14px;
+      }
+
+      body.coach-active .coach-col-form .coach-panel > summary,
+      body.coach-active .coach-col-list .coach-panel > summary {
+        display: none;
+      }
+
+      body.coach-active .coach-col-form .coach-panel,
+      body.coach-active .coach-col-list .coach-panel {
+        margin-bottom: 0;
+      }
+
+      body.coach-active .coach-col-form .coach-panel[open] .coach-panel-body,
+      body.coach-active .coach-col-list .coach-panel[open] .coach-panel-body {
+        display: block;
+      }
+
+      body.coach-active .coach-col-list .coach-panel-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+      }
+
+      body.coach-active .coach-ing-wrap {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      body.coach-active .coach-ing-side {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      body.coach-active .coach-ing-wrap .ing-list {
+        grid-column: 2;
+        grid-row: 1;
+        max-height: 280px;
+        overflow-y: auto;
+        margin-bottom: 0;
+        padding: 4px 0;
+      }
+
+      body.coach-active .coach-ing-side .ing-add {
+        grid-template-columns: 1.5fr 1fr 48px;
+      }
+
+      body.coach-active .coach-week-table-wrap {
+        display: block;
+        margin-bottom: 12px;
+        overflow-x: auto;
+      }
+
+      body.coach-active #coachList .coach-day {
+        display: none;
+      }
+
+      body.coach-active #coachList .muted[style*="padding"] {
+        display: none;
+      }
+    }
+
+    .coach-week-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .coach-week-table th,
+    .coach-week-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .coach-week-table th {
+      background: var(--card-inner);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .coach-week-table td.day-label {
+      font-weight: 600;
+      white-space: nowrap;
+      color: var(--text);
+      background: var(--card-inner);
+    }
+    .coach-week-table td.cell {
+      cursor: pointer;
+      min-width: 100px;
+      transition: background 150ms;
+    }
+    .coach-week-table td.cell:hover {
+      background: var(--accent-soft);
+    }
+    .coach-week-table td.cell.empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+    .coach-week-table td.cell.filled {
+      font-weight: 500;
+    }
+
     @media print {
       :root { --bg-dark: #000; }
       body { background: #fff; }
@@ -1885,8 +2008,10 @@
           </div>
         </details>
 
+        <div class="coach-workspace">
         <!-- 2. Создание меню -->
-        <details class="coach-panel">
+        <div class="coach-col coach-col-form">
+        <details class="coach-panel" id="coachPanelForm">
           <summary>
             <span class="coach-panel-title">Создание меню</span>
             <span class="coach-panel-hint">форма блюда</span>
@@ -1941,24 +2066,28 @@
 
             <div>
               <label>Ингредиенты</label>
-              <div id="cIngList" class="ing-list"></div>
-              <div class="ing-add">
-                <input id="cIngName" type="text" placeholder="Название (например, Овсянка)">
-                <input id="cIngWeight" type="text" placeholder="Вес: 50 г / 200 мл / 1 шт">
-                <button type="button" id="cIngAddBtn" class="btn btn--sm" aria-label="Добавить">+</button>
-              </div>
-              <div id="cIngKind" class="ing-kind">
-                <label><input type="radio" name="cIngKind" value="main" checked> Основной</label>
-                <label><input type="radio" name="cIngKind" value="alt"> Альтернативный</label>
-              </div>
-              <div id="cIngTarget" class="ing-target" hidden>
-                <span>Добавляешь вариант в группу: <b id="cIngTargetName">—</b></span>
-                <button type="button" id="cIngTargetCancel" class="btn btn--ghost btn--sm">Отменить</button>
-              </div>
-              <div class="form-hint">
-                <b>Основной</b> — обязательный ингредиент (попадёт в корзину как обычно).
-                <br><b>Альтернативный</b> — создаёт новую группу взаимозаменяемых вариантов (например, «курица / рыба / субпродукты — 170 г»).
-                Чтобы добавить ещё один вариант в уже созданную группу, нажми <b>«+ вариант»</b> у её строки в списке ниже.
+              <div class="coach-ing-wrap">
+                <div id="cIngList" class="ing-list"></div>
+                <div class="coach-ing-side">
+                  <div class="ing-add">
+                    <input id="cIngName" type="text" placeholder="Название (например, Овсянка)">
+                    <input id="cIngWeight" type="text" placeholder="Вес: 50 г / 200 мл / 1 шт">
+                    <button type="button" id="cIngAddBtn" class="btn btn--sm" aria-label="Добавить">+</button>
+                  </div>
+                  <div id="cIngKind" class="ing-kind">
+                    <label><input type="radio" name="cIngKind" value="main" checked> Основной</label>
+                    <label><input type="radio" name="cIngKind" value="alt"> Альтернативный</label>
+                  </div>
+                  <div id="cIngTarget" class="ing-target" hidden>
+                    <span>Добавляешь вариант в группу: <b id="cIngTargetName">—</b></span>
+                    <button type="button" id="cIngTargetCancel" class="btn btn--ghost btn--sm">Отменить</button>
+                  </div>
+                  <div class="form-hint">
+                    <b>Основной</b> — обязательный ингредиент (попадёт в корзину как обычно).
+                    <br><b>Альтернативный</b> — создаёт новую группу взаимозаменяемых вариантов.
+                    Чтобы добавить ещё один вариант в группу, нажми <b>«+ вариант»</b> у строки в списке.
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1985,9 +2114,11 @@
           </form>
           </div>
         </details>
+        </div>
 
         <!-- 3. Заполненные блюда и публикация -->
-        <details class="coach-panel">
+        <div class="coach-col coach-col-list">
+        <details class="coach-panel" id="coachPanelList">
           <summary>
             <span class="coach-panel-title">Заполненные блюда и публикация</span>
             <span class="coach-panel-hint" id="coachHintDishes"></span>
@@ -2003,12 +2134,15 @@
               <h3 style="margin:0">Список по дням</h3>
               <span class="muted" id="coachListCount">—</span>
             </div>
+            <div id="coachWeekTable" class="coach-week-table-wrap"></div>
             <div id="coachList"></div>
             <button type="button" class="btn btn--block" id="cPublishBtn" disabled style="margin-top:12px">Опубликовать всё</button>
             <div class="muted" style="margin-top:10px; font-size:12px" id="cPublishInfo">—</div>
             <div class="muted" style="margin-top:4px; font-size:12px" id="cPublishStatus">Ещё не публиковалось</div>
           </div>
         </details>
+        </div>
+        </div>
 
         <!-- 4. Задания: создание и публикация -->
         <details class="coach-panel">
@@ -2701,7 +2835,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 26;
+    const APP_BUILD = 27;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -2896,6 +3030,9 @@
       $("#appRefreshBtn").addEventListener("click", forceAppRefresh);
       $("#btnForceRefresh").addEventListener("click", forceAppRefresh);
       document.addEventListener("visibilitychange", softRefreshOnVisible);
+      window.addEventListener("resize", () => {
+        if (state.tab === "coach" && isCoachDevice()) applyCoachDesktopPanels();
+      });
       window.addEventListener("pageshow", e => {
         if (e.persisted) softRefreshOnVisible();
       });
@@ -2936,6 +3073,22 @@
         btn.addEventListener("click", () => showTab(btn.dataset.tab));
       });
     }
+    function isCoachDesktopLayout() {
+      return window.matchMedia("(min-width: 1024px)").matches;
+    }
+
+    function setCoachActiveUI(on) {
+      document.body.classList.toggle("coach-active", !!on);
+    }
+
+    function applyCoachDesktopPanels() {
+      const formPanel = $("#coachPanelForm");
+      const listPanel = $("#coachPanelList");
+      const wide = document.body.classList.contains("coach-active") && isCoachDesktopLayout();
+      if (formPanel) formPanel.open = wide;
+      if (listPanel) listPanel.open = wide;
+    }
+
     function showTab(tab) {
       state.tab = tab;
       $$(".tab-content").forEach(s => {
@@ -2944,6 +3097,8 @@
       $$(".nav-btn").forEach(b => {
         b.classList.toggle("active", b.dataset.tab === tab);
       });
+      setCoachActiveUI(tab === "coach" && isCoachDevice());
+      if (tab === "coach") applyCoachDesktopPanels();
       window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
     }
 
@@ -4669,6 +4824,7 @@
     function exitCoachSession() {
       setCoachAuthenticated(false);
       clearCoachDevice();
+      setCoachActiveUI(false);
       updateCoachNav();
       showTab("more");
       renderMenuTab();
@@ -4721,6 +4877,7 @@
       // Пере-рендерим вкладки, поскольку флаг isCoachDevice мог только что включиться
       renderTasksTab(); renderTodayCard();
       renderMenuTab(); renderShoppingTab();
+      applyCoachDesktopPanels();
     }
 
     function deepClone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -5784,7 +5941,91 @@
       updateCoachDateInfo();
       updateOrderPlaceholder();
       renderCoachIngList();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const formEl = $("#coachForm");
+      if (formEl) formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderCoachWeekTable(activeWeek, local) {
+      const wrap = $("#coachWeekTable");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+
+      if (!activeWeek || typeof activeWeek !== "number" || !isCoachDesktopLayout()) {
+        wrap.hidden = true;
+        return;
+      }
+
+      const weekStart = getWeekStartForWeekNum(activeWeek);
+      const marathonStart = getMarathonStart();
+      const marathonEnd = getMarathonEnd();
+
+      const table = document.createElement("table");
+      table.className = "coach-week-table";
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      headRow.innerHTML = "<th>День</th>";
+      MEAL_KEYS.forEach(m => {
+        const th = document.createElement("th");
+        th.textContent = m.icon + " " + m.name;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      let hasRows = false;
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart.getTime() + i * 86400000);
+        if (date < marathonStart || date > marathonEnd) continue;
+        hasRows = true;
+        const iso = isoDate(date);
+        const tr = document.createElement("tr");
+
+        const dayTd = document.createElement("td");
+        dayTd.className = "day-label";
+        dayTd.textContent = getDayOfWeekRu(date).slice(0, 2) + " " +
+          pad2(date.getDate()) + "." + pad2(date.getMonth() + 1);
+        tr.appendChild(dayTd);
+
+        MEAL_KEYS.forEach(m => {
+          const td = document.createElement("td");
+          td.className = "cell";
+          const slot = local[iso] && local[iso][m.key];
+          const dishes = slot ? getDishes(slot) : [];
+          const dish = dishes.find(d => normalizeKind(d.kind) === "main") || dishes[0];
+
+          if (dish) {
+            td.classList.add("filled");
+            td.textContent = dish.title || "—";
+            const dishIndex = dishes.indexOf(dish);
+            td.addEventListener("click", () => populateCoachForm(iso, m.key, dish, dishIndex));
+          } else {
+            td.classList.add("empty");
+            td.textContent = "пусто";
+            td.addEventListener("click", () => {
+              $("#cDate").value = iso;
+              $("#cMeal").value = m.key;
+              updateCoachDateInfo();
+              updateOrderPlaceholder();
+              coachClearForm();
+              $("#cTitle").focus();
+            });
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+
+      if (!hasRows) {
+        wrap.hidden = true;
+        return;
+      }
+
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      wrap.hidden = false;
     }
 
     // ---------- Coach: helpers for grouped list ----------
@@ -5860,7 +6101,8 @@
         : "пусто";
 
       if (totalDays === 0) {
-        list.innerHTML = '<div class="muted" style="padding:12px 0">Ещё ничего не заполнено. Заполните форму выше — блюда появятся здесь и сразу попадут на вкладку «Меню».</div>';
+        list.innerHTML = '<div class="muted" style="padding:12px 0">Ещё ничего не заполнено. Заполните форму слева — блюда появятся здесь и сразу попадут на вкладку «Меню».</div>';
+        renderCoachWeekTable(null, local);
         return;
       }
 
@@ -5898,6 +6140,7 @@
         switcher.appendChild(b);
       }
       list.appendChild(switcher);
+      renderCoachWeekTable(activeWeek, local);
 
       // Какие даты показать в активной неделе.
       let dates = [];
