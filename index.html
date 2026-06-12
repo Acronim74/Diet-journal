@@ -4664,7 +4664,7 @@
         allDates.forEach(iso => {
           const d = new Date(iso + "T00:00:00");
           if (isNaN(d)) return;
-          const label = getDayOfWeekRu(d).slice(0, 2).toLowerCase() + " " +
+          const label = DAYS_SHORT_RU[d.getDay()].toLowerCase() + " " +
                         pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
           make(label, { type: "date", iso }, { past: iso < todayIso });
         });
@@ -4807,7 +4807,7 @@
         if (u.date === todayIso) chip.classList.add("today");
         else if (u.isPast) chip.classList.add("past");
         const d = new Date(u.date + "T00:00:00");
-        chip.textContent = getDayOfWeekRu(d).slice(0, 2).toLowerCase() + " " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
+        chip.textContent = DAYS_SHORT_RU[d.getDay()].toLowerCase() + " " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
         chips.appendChild(chip);
       });
       if (item.usages.length > 6) {
@@ -6715,7 +6715,7 @@
 
         const dayTd = document.createElement("td");
         dayTd.className = "day-label";
-        dayTd.textContent = getDayOfWeekRu(date).slice(0, 2) + " " +
+        dayTd.textContent = DAYS_SHORT_RU[date.getDay()] + " " +
           pad2(date.getDate()) + "." + pad2(date.getMonth() + 1);
         tr.appendChild(dayTd);
 
