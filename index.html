@@ -2036,6 +2036,27 @@
     }
     .coach-form-mode-text b { color: var(--peach-dark); }
 
+    .coach-panel-body--form {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding-bottom: 0 !important;
+    }
+    .coach-panel-body--form .coach-form {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-bottom: 8px;
+    }
+    .coach-form-actions {
+      flex-shrink: 0;
+      padding: 12px var(--card-pad) var(--card-pad);
+      margin: 0 calc(-1 * var(--card-pad));
+      border-top: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: 0 -4px 16px rgba(46, 46, 46, 0.04);
+    }
+
     @media print {
       :root { --bg-dark: #000; }
       body { background: #fff; }
