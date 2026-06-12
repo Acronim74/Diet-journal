@@ -1274,6 +1274,12 @@
       gap: 12px;
     }
 
+    .ing-recipe-block {
+      max-height: min(220px, 35vh);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
     .ing-list {
       display: flex;
       flex-direction: column;
@@ -1847,6 +1853,13 @@
         flex-direction: column;
         flex: 1;
         min-height: 0;
+      }
+
+      body.coach-active .coach-col-form .coach-panel[open] .coach-panel-body {
+        overflow: hidden;
+      }
+
+      body.coach-active .coach-col-list .coach-panel[open] .coach-panel-body {
         overflow-y: auto;
       }
 
@@ -1889,8 +1902,7 @@
       }
 
       body.coach-active .coach-ing-wrap .ing-recipe-block {
-        max-height: 280px;
-        overflow-y: auto;
+        max-height: min(200px, 28vh);
         padding: 8px 10px;
         background: var(--card);
         border-radius: 10px;
@@ -1919,19 +1931,9 @@
         gap: 10px;
       }
 
-      body.coach-active .coach-form-actions {
-        position: sticky;
-        bottom: 0;
-        z-index: 2;
-        margin-top: auto;
-        padding-top: 12px;
-        background: linear-gradient(to top, var(--card) 70%, transparent);
-      }
-
       body.coach-active #coachForm .ing-add,
       body.coach-active #coachForm .ing-list .ing-row:last-child,
-      body.coach-active #coachForm textarea,
-      body.coach-active #coachForm .coach-form-actions {
+      body.coach-active #coachForm textarea {
         scroll-margin-bottom: 16px;
       }
 
@@ -2050,11 +2052,13 @@
     }
     .coach-form-actions {
       flex-shrink: 0;
+      position: relative;
+      z-index: 10;
       padding: 12px var(--card-pad) var(--card-pad);
       margin: 0 calc(-1 * var(--card-pad));
       border-top: 1px solid var(--border);
       background: var(--card);
-      box-shadow: 0 -4px 16px rgba(46, 46, 46, 0.04);
+      box-shadow: 0 -4px 16px rgba(46, 46, 46, 0.06);
     }
 
     @media print {
@@ -2344,7 +2348,7 @@
             <span class="coach-panel-hint">форма блюда</span>
             <span class="chev"></span>
           </summary>
-          <div class="coach-panel-body">
+          <div class="coach-panel-body coach-panel-body--form">
           <form id="coachForm" class="stack coach-form" autocomplete="off">
             <div class="coach-form-meta">
               <div class="grid-2 coach-form-date-meal">
@@ -2450,12 +2454,11 @@
                 </div>
               </div>
             </div>
-
-            <div class="coach-form-actions grid-2">
-              <button type="button" class="btn btn--ghost" id="cClearBtn">Очистить форму</button>
-              <button type="submit" class="btn" id="coachSubmitBtn">Сохранить блюдо</button>
-            </div>
           </form>
+          <div class="coach-form-actions grid-2">
+            <button type="button" class="btn btn--ghost" id="cClearBtn">Очистить</button>
+            <button type="submit" class="btn" id="coachSubmitBtn" form="coachForm">Сохранить блюдо</button>
+          </div>
           </div>
         </details>
         </div>
@@ -3187,7 +3190,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 31;
+    const APP_BUILD = 33;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -6310,6 +6313,17 @@
     function scrollCoachFieldIntoView(el) {
       if (!el || el.hidden) return;
       requestAnimationFrame(() => {
+        const scrollParent = el.closest(".ing-recipe-block, #coachForm");
+        if (scrollParent) {
+          const parentRect = scrollParent.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          if (elRect.bottom > parentRect.bottom - 4) {
+            scrollParent.scrollTop += elRect.bottom - parentRect.bottom + 8;
+          } else if (elRect.top < parentRect.top + 4) {
+            scrollParent.scrollTop -= parentRect.top - elRect.top + 8;
+          }
+          return;
+        }
         el.scrollIntoView({ block: "nearest", behavior: "smooth" });
       });
     }

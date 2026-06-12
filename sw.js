@@ -1,4 +1,4 @@
-const CACHE = 'marathon-v32';
+const CACHE = 'marathon-v33';
 const DATA_CACHE_KEY = new Request('./data.json', { cache: 'reload' });
 
 const SHELL_ASSETS = [
