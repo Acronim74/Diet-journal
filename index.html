@@ -1767,16 +1767,49 @@
       }
 
       body.coach-active .coach-desk-heading {
+        display: block;
+        margin: 0 0 10px;
+      }
+
+      body.coach-active .coach-desk-toggle {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 8px;
-        margin: 0 0 10px;
+        width: 100%;
+        margin: 0;
+        padding: 14px 18px;
+        font: inherit;
         font-size: 13px;
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         color: var(--muted);
+        text-align: left;
+        cursor: pointer;
+        background: var(--card);
+        border: 1px solid rgba(232, 224, 212, 0.6);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        transition: background 150ms;
+      }
+
+      body.coach-active .coach-desk-toggle:hover {
+        background: var(--card-inner);
+      }
+
+      body.coach-active .coach-desk-toggle .chev {
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid var(--muted);
+        border-bottom: 2px solid var(--muted);
+        transform: rotate(45deg);
+        transition: transform 150ms;
+        flex-shrink: 0;
+      }
+
+      body.coach-active .coach-desk-heading.is-open .coach-desk-toggle .chev {
+        transform: rotate(-135deg);
       }
 
       body.coach-active .coach-desk-heading-meta {
@@ -2254,8 +2287,13 @@
         <div class="coach-workspace">
         <!-- 2. Создание меню -->
         <div class="coach-col coach-col-form">
-        <h3 class="coach-desk-heading">Создание меню</h3>
-        <details class="coach-panel" id="coachPanelForm">
+        <h3 class="coach-desk-heading is-open">
+          <button type="button" class="coach-desk-toggle" id="coachFormToggle" aria-expanded="true" aria-controls="coachPanelForm">
+            <span>Создание меню</span>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <details class="coach-panel" id="coachPanelForm" open>
           <summary>
             <span class="coach-panel-title">Создание меню</span>
             <span class="coach-panel-hint">форма блюда</span>
@@ -2374,8 +2412,13 @@
 
         <!-- 3. Заполненные блюда и публикация -->
         <div class="coach-col coach-col-list">
-        <h3 class="coach-desk-heading">Неделя и публикация <span class="coach-desk-heading-meta" id="coachDeskListMeta"></span></h3>
-        <details class="coach-panel" id="coachPanelList">
+        <h3 class="coach-desk-heading is-open">
+          <button type="button" class="coach-desk-toggle" id="coachListToggle" aria-expanded="true" aria-controls="coachPanelList">
+            <span>Неделя и публикация <span class="coach-desk-heading-meta" id="coachDeskListMeta"></span></span>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <details class="coach-panel" id="coachPanelList" open>
           <summary>
             <span class="coach-panel-title">Заполненные блюда и публикация</span>
             <span class="coach-panel-hint" id="coachHintDishes"></span>
@@ -3094,7 +3137,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 29;
+    const APP_BUILD = 30;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -3281,6 +3324,7 @@
       bindForm();
       bindCoachTriggers();
       bindCoachForm();
+      bindCoachDeskToggles();
       bindPublishControls();
       bindMarathonMeta();
       bindTaskForm();
@@ -3340,12 +3384,37 @@
       document.body.classList.toggle("coach-active", !!on);
     }
 
+    function syncCoachDeskToggle(btnId, panelId) {
+      const btn = $("#" + btnId);
+      const panel = $("#" + panelId);
+      if (!btn || !panel) return;
+      const open = panel.open;
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      const heading = btn.closest(".coach-desk-heading");
+      if (heading) heading.classList.toggle("is-open", open);
+    }
+
+    function bindCoachDeskToggles() {
+      [
+        ["coachFormToggle", "coachPanelForm"],
+        ["coachListToggle", "coachPanelList"]
+      ].forEach(([btnId, panelId]) => {
+        const btn = $("#" + btnId);
+        const panel = $("#" + panelId);
+        if (!btn || !panel) return;
+        btn.addEventListener("click", () => {
+          panel.open = !panel.open;
+          syncCoachDeskToggle(btnId, panelId);
+        });
+        panel.addEventListener("toggle", () => syncCoachDeskToggle(btnId, panelId));
+        syncCoachDeskToggle(btnId, panelId);
+      });
+    }
+
     function applyCoachDesktopPanels() {
-      const formPanel = $("#coachPanelForm");
-      const listPanel = $("#coachPanelList");
-      const wide = document.body.classList.contains("coach-active") && isCoachDesktopLayout();
-      if (formPanel) formPanel.open = wide;
-      if (listPanel) listPanel.open = wide;
+      syncCoachDeskToggle("coachFormToggle", "coachPanelForm");
+      syncCoachDeskToggle("coachListToggle", "coachPanelList");
+      if (state.tab === "coach" && isCoachDevice()) renderCoachList();
     }
 
     function showTab(tab) {
