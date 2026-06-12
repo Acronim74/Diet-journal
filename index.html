@@ -1900,6 +1900,15 @@
         overflow: hidden;
       }
 
+      /* «Опубликовать всё» не должна уезжать за нижний край вместе с длинным
+         списком дней — прилипает к низу прокручиваемой панели. */
+      body.coach-active .coach-col-list #cPublishBtn {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        box-shadow: 0 -10px 14px -10px rgba(74, 59, 42, 0.35);
+      }
+
       body.coach-active .coach-col-list .coach-panel[open] .coach-panel-body {
         overflow-y: auto;
       }
@@ -5529,6 +5538,13 @@
         }
 
         setCoachDish(date, meal, dish, replaceIndex, slotOrderVal);
+
+        // Переключаем список на неделю сохранённого блюда, чтобы карточка дня
+        // (с кнопкой «Опубл.») сразу была на виду, а не в другой вкладке недели.
+        const dishWeek = weekIndexForDate(date);
+        if (dishWeek === -1) setCoachWeek("before");
+        else if (dishWeek != null && dishWeek > totalMarathonWeeks()) setCoachWeek("after");
+        else if (dishWeek != null) setCoachWeek(dishWeek);
 
         toast(replaceIndex != null ? "Сохранено" : "Добавлено к приёму пищи");
         startNewCoachDish(date, meal);
