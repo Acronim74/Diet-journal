@@ -1888,6 +1888,18 @@
         min-height: 0;
       }
 
+      /* Chrome 131+/новые браузеры оборачивают содержимое <details> во внутренний
+         бокс ::details-content — без этого правила flex-цепочка (flex:1 + min-height:0)
+         до .coach-panel-body рвётся, форма не скроллится и низ обрезается overflow:hidden. */
+      body.coach-active .coach-col-form .coach-panel::details-content,
+      body.coach-active .coach-col-list .coach-panel::details-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
       body.coach-active .coach-col-list .coach-panel[open] .coach-panel-body {
         overflow-y: auto;
       }
