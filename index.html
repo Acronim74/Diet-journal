@@ -1729,6 +1729,48 @@
     /* ============================================================
        Коуч: ПК-режим (только body.coach-active + ≥1024px)
        ============================================================ */
+    .kbju-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .kbju-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .kbju-lbl {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.2;
+    }
+    .kbju-cell input {
+      width: 100%;
+      text-align: center;
+      padding: 10px 8px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+      -moz-appearance: textfield;
+    }
+    .kbju-cell input::-webkit-outer-spin-button,
+    .kbju-cell input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .kbju-cell input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+
     .coach-ing-wrap {
       display: flex;
       flex-direction: column;
@@ -2004,22 +2046,15 @@
       }
 
       body.coach-active .coach-form-detail {
-        display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        display: flex;
+        flex-direction: column;
         gap: 10px;
-        align-items: start;
       }
 
       body.coach-active .coach-form-recipe textarea {
         min-height: 72px;
         max-height: 120px;
         resize: vertical;
-      }
-
-      body.coach-active .coach-form-nutrition {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
       }
 
       body.coach-active #coachForm .kind-radios label {
@@ -2559,14 +2594,25 @@
                 <label for="cRecipe">Рецепт</label>
                 <textarea id="cRecipe" rows="3" placeholder="Шаги приготовления (необязательно)"></textarea>
               </div>
-              <div class="coach-form-nutrition grid-2">
-                <div>
-                  <label for="cKbju">КБЖУ</label>
-                  <input id="cKbju" type="text" placeholder="Б 9 г · Ж 8 г · У 55 г">
-                </div>
-                <div>
-                  <label for="cCalories">Калории, ккал</label>
-                  <input id="cCalories" type="number" min="0" placeholder="340">
+              <div class="coach-form-kbju">
+                <label>КБЖУ</label>
+                <div class="kbju-row">
+                  <div class="kbju-cell">
+                    <span class="kbju-lbl">Б, г</span>
+                    <input id="cProtein" type="number" min="0" step="0.1" inputmode="decimal" placeholder="0">
+                  </div>
+                  <div class="kbju-cell">
+                    <span class="kbju-lbl">Ж, г</span>
+                    <input id="cFat" type="number" min="0" step="0.1" inputmode="decimal" placeholder="0">
+                  </div>
+                  <div class="kbju-cell">
+                    <span class="kbju-lbl">У, г</span>
+                    <input id="cCarbs" type="number" min="0" step="0.1" inputmode="decimal" placeholder="0">
+                  </div>
+                  <div class="kbju-cell">
+                    <span class="kbju-lbl">Ккал</span>
+                    <input id="cCalories" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                  </div>
                 </div>
               </div>
             </div>
@@ -3306,7 +3352,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 35;
+    const APP_BUILD = 39;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -5342,6 +5388,51 @@
       el.textContent = "Итого (отмеченные): " + parts.join(" + ");
     }
 
+    function fmtMacroNum(raw) {
+      const v = parseFloat(String(raw).replace(",", "."));
+      if (!isFinite(v) || v < 0) return "";
+      return v % 1 === 0 ? String(Math.round(v)) : String(Math.round(v * 10) / 10);
+    }
+
+    function parseKbjuString(str) {
+      const s = (str || "").trim();
+      const out = { p: "", f: "", c: "" };
+      if (!s) return out;
+      const bp = s.match(/Б\s*([\d.,]+)/i);
+      const fp = s.match(/Ж\s*([\d.,]+)/i);
+      const cp = s.match(/У\s*([\d.,]+)/i);
+      if (bp) out.p = fmtMacroNum(bp[1]);
+      if (fp) out.f = fmtMacroNum(fp[1]);
+      if (cp) out.c = fmtMacroNum(cp[1]);
+      return out;
+    }
+
+    function buildKbjuString(protein, fat, carbs) {
+      const parts = [];
+      const p = fmtMacroNum(protein);
+      const f = fmtMacroNum(fat);
+      const c = fmtMacroNum(carbs);
+      if (p) parts.push("Б " + p + " г");
+      if (f) parts.push("Ж " + f + " г");
+      if (c) parts.push("У " + c + " г");
+      return parts.join(" · ");
+    }
+
+    function clearKbjuFields() {
+      $("#cProtein").value = "";
+      $("#cFat").value = "";
+      $("#cCarbs").value = "";
+      $("#cCalories").value = "";
+    }
+
+    function setKbjuFieldsFromDish(dish) {
+      const m = parseKbjuString(dish && dish.kbju);
+      $("#cProtein").value = m.p;
+      $("#cFat").value = m.f;
+      $("#cCarbs").value = m.c;
+      $("#cCalories").value = (dish && dish.calories != null) ? dish.calories : "";
+    }
+
     function setKindRadio(kind) {
       const k = normalizeKind(kind);
       document.querySelectorAll('#cKind input[type="radio"]').forEach(i => {
@@ -5503,7 +5594,11 @@
           return;
         }
         const recipe = $("#cRecipe").value.trim();
-        const kbju = $("#cKbju").value.trim();
+        const kbju = buildKbjuString(
+          $("#cProtein").value.trim(),
+          $("#cFat").value.trim(),
+          $("#cCarbs").value.trim()
+        );
         const calRaw = $("#cCalories").value.trim();
         const calories = calRaw === "" ? null : parseInt(calRaw, 10);
         const orderRaw = $("#cOrder").value.trim();
@@ -6644,8 +6739,7 @@
       $("#cMeal").value = meal;
       $("#cTitle").value = "";
       $("#cRecipe").value = "";
-      $("#cKbju").value = "";
-      $("#cCalories").value = "";
+      clearKbjuFields();
       $("#cOrder").value = "";
       setKindRadio("main");
       cancelIngAddingMode();
@@ -6667,8 +6761,7 @@
       $("#cMeal").value = mealKey;
       $("#cTitle").value = dish.title || "";
       $("#cRecipe").value = dish.recipe || "";
-      $("#cKbju").value = dish.kbju || "";
-      $("#cCalories").value = dish.calories != null ? dish.calories : "";
+      setKbjuFieldsFromDish(dish);
 
       // Порядок слота лежит на самом слоте (не на блюде); читаем из коуч-оверрайдов.
       const all = getCoachOverrides();
