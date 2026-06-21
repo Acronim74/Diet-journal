@@ -1623,6 +1623,95 @@
       cursor: pointer;
     }
     .cd-publish-btn:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.6; }
+
+    /* Верхняя навигация в сессии коуча */
+    :root { --coach-top-nav-h: 46px; }
+    .coach-top-nav {
+      position: fixed;
+      top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--coach-top-nav-h);
+      display: flex;
+      align-items: stretch;
+      gap: 4px;
+      padding: 6px 10px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(46, 46, 46, 0.04);
+      z-index: 49;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .coach-top-nav[hidden] { display: none !important; }
+    .coach-top-btn {
+      flex: 1 0 auto;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--page-bg);
+      color: var(--muted);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 150ms, color 150ms, border-color 150ms;
+    }
+    .coach-top-btn:hover { background: var(--card-inner); color: var(--text); }
+    .coach-top-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .coach-top-btn--coach.active {
+      background: var(--peach-soft);
+      border-color: var(--peach-dark);
+      color: var(--peach-dark);
+    }
+    body.coach-session #bottomNav { display: none !important; }
+    body.coach-session main#content {
+      padding-top: calc(var(--header-h) + var(--coach-top-nav-h) + env(safe-area-inset-top, 0px) + 16px);
+    }
+
+    .coach-week-table .cell-dishes {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .coach-week-table .cell-dish-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      cursor: pointer;
+      line-height: 1.35;
+      font-size: 12px;
+    }
+    .coach-week-table .cell-dish-line:hover { color: var(--accent); }
+    .coach-week-table .cell-dish-title {
+      min-width: 0;
+      word-break: break-word;
+    }
+    .coach-week-table td.day-pub {
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+      width: 76px;
+      background: var(--card-inner);
+    }
+    .coach-week-table th.day-pub-h {
+      text-align: center;
+      width: 76px;
+      background: var(--card-inner);
+    }
+    .coach-week-table .day-pub-status {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
     .cd-body {
       padding: 0 12px 8px;
       border-top: 1px solid var(--border);
@@ -1786,6 +1875,10 @@
       }
 
       body.coach-active #topBar {
+        max-width: 1100px;
+      }
+
+      body.coach-active .coach-top-nav {
         max-width: 1100px;
       }
 
@@ -2244,6 +2337,15 @@
         <div class="day-indicator" id="dayIndicator">—</div>
       </div>
     </header>
+
+    <nav id="coachTopNav" class="coach-top-nav" hidden>
+      <button type="button" class="coach-top-btn" data-tab="today">Сегодня</button>
+      <button type="button" class="coach-top-btn" data-tab="menu">Меню</button>
+      <button type="button" class="coach-top-btn" data-tab="shopping">Список</button>
+      <button type="button" class="coach-top-btn" data-tab="measurements">Замеры</button>
+      <button type="button" class="coach-top-btn" data-tab="more">Ещё</button>
+      <button type="button" class="coach-top-btn coach-top-btn--coach" data-tab="coach">Коуч</button>
+    </nav>
 
     <main id="content">
       <!-- TAB: TODAY (стартовая) -->
@@ -3352,7 +3454,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 39;
+    const APP_BUILD = 40;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -3555,6 +3657,10 @@
         if (e.persisted) softRefreshOnVisible();
       });
       updateCoachNav();
+      if (isCoachDevice()) {
+        setCoachSessionUI(true);
+        updateCoachTopNav(state.tab);
+      }
       renderAll();
       maybeOnboard();
 
@@ -3590,6 +3696,7 @@
       $$(".nav-btn").forEach(btn => {
         btn.addEventListener("click", () => showTab(btn.dataset.tab));
       });
+      bindCoachTopNav();
     }
     function isCoachDesktopLayout() {
       return window.matchMedia("(min-width: 1024px)").matches;
@@ -3597,6 +3704,24 @@
 
     function setCoachActiveUI(on) {
       document.body.classList.toggle("coach-active", !!on);
+    }
+
+    function setCoachSessionUI(on) {
+      document.body.classList.toggle("coach-session", !!on);
+      const nav = $("#coachTopNav");
+      if (nav) nav.hidden = !on;
+    }
+
+    function updateCoachTopNav(tab) {
+      $$(".coach-top-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+    }
+
+    function bindCoachTopNav() {
+      $$(".coach-top-btn").forEach(btn => {
+        btn.addEventListener("click", () => showTab(btn.dataset.tab));
+      });
     }
 
     function syncCoachDeskToggle(btnId, panelId) {
@@ -3640,7 +3765,10 @@
       $$(".nav-btn").forEach(b => {
         b.classList.toggle("active", b.dataset.tab === tab);
       });
-      setCoachActiveUI(tab === "coach" && isCoachDevice());
+      const coachDevice = isCoachDevice();
+      setCoachSessionUI(coachDevice);
+      updateCoachTopNav(tab);
+      setCoachActiveUI(tab === "coach" && coachDevice);
       if (tab === "coach") applyCoachDesktopPanels();
       window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
     }
@@ -5497,6 +5625,7 @@
       setCoachAuthenticated(false);
       clearCoachDevice();
       setCoachActiveUI(false);
+      setCoachSessionUI(false);
       updateCoachNav();
       showTab("more");
       renderMenuTab();
@@ -5910,8 +6039,8 @@
       localStorage.setItem("gh_last_publish", ts);
     }
 
-    // Опубликовать ОДИН день: если в локальной копии есть — записать,
-    // если нет (день удалён локально) — удалить из удалённой публикации.
+    // Опубликовать ОДИН день: записать локальное состояние (в т.ч. изменённое)
+    // или удалить день с сервера, если локально его нет / он пустой.
     async function publishDayToGitHub(dateIso, btn) {
       const token = getGhToken();
       if (!token) { toast("Сначала сохрани токен"); return; }
@@ -5925,21 +6054,22 @@
         }
         const local = getCoachOverrides();
         const localDay = local[dateIso];
+        const hasLocal = !!(localDay && typeof localDay === "object" && Object.keys(localDay).length > 0);
+        const hadRemote = Object.prototype.hasOwnProperty.call(remoteData.coach_overrides, dateIso);
+
         let action;
-        if (localDay && Object.keys(localDay).length > 0) {
-          remoteData.coach_overrides[dateIso] = localDay;
-          action = "update";
-        } else {
-          if (!(dateIso in remoteData.coach_overrides)) {
-            toast("На сервере и так нет этого дня");
-            if (btn) { btn.textContent = originalText; btn.disabled = false; }
-            // На всякий случай синхронизируем UI:
-            state.data.coach_overrides = remoteData.coach_overrides;
-            renderCoachList(); renderPublishUI();
-            return;
-          }
+        if (hasLocal) {
+          remoteData.coach_overrides[dateIso] = deepClone(localDay);
+          action = hadRemote ? "update" : "create";
+        } else if (hadRemote) {
           delete remoteData.coach_overrides[dateIso];
           action = "delete";
+        } else {
+          toast("Нет изменений для публикации");
+          if (btn) { btn.textContent = originalText; btn.disabled = false; }
+          renderCoachList();
+          renderPublishUI();
+          return;
         }
 
         const commitMsg = (action === "delete" ? "Coach: remove " : "Coach: publish ") + dateIso;
@@ -5974,7 +6104,7 @@
       try {
         const { data: remoteData, sha } = await ghFetchData(token);
         const local = getCoachOverrides();
-        remoteData.coach_overrides = local;
+        remoteData.coach_overrides = deepClone(local);
 
         const localDays = Object.keys(local).length;
         const commitMsg = "Coach: sync all days (" + localDays + " day" + (localDays === 1 ? "" : "s") + ")";
@@ -6726,7 +6856,7 @@
 
     function refreshCoachWeekTableHighlight() {
       const ctx = coachForm.weekTableCtx;
-      if (ctx) renderCoachWeekTable(ctx.activeWeek, ctx.local);
+      if (ctx) renderCoachWeekTable(ctx.activeWeek, ctx.local, ctx.published);
     }
 
     function startNewCoachDish(dateIso, mealKey) {
@@ -6796,11 +6926,93 @@
       else window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function renderCoachWeekTable(activeWeek, local) {
+    function sortDishesForDisplay(dishes) {
+      const kindOrder = { main: 0, addon: 1, alt: 2 };
+      return dishes.slice().sort((a, b) => {
+        const ka = kindOrder[normalizeKind(a.kind)] ?? 9;
+        const kb = kindOrder[normalizeKind(b.kind)] ?? 9;
+        return ka - kb;
+      });
+    }
+
+    function dishKindBadgeEl(kind) {
+      const k = normalizeKind(kind);
+      if (k === "main") return null;
+      const badge = document.createElement("span");
+      badge.className = "dish-badge-sm " + (k === "alt" ? "alt" : "addon");
+      badge.textContent = k === "alt" ? "альт." : "доп.";
+      return badge;
+    }
+
+    function fillWeekTableMealCell(td, iso, mealKey, dishes) {
+      td.className = "cell";
+      if (!dishes.length) {
+        td.classList.add("empty");
+        td.textContent = "пусто";
+        td.addEventListener("click", () => {
+          startNewCoachDish(iso, mealKey);
+          $("#cTitle").focus();
+        });
+        return;
+      }
+
+      td.classList.add("filled");
+      const list = document.createElement("div");
+      list.className = "cell-dishes";
+      sortDishesForDisplay(dishes).forEach(dish => {
+        const dishIndex = dishes.indexOf(dish);
+        const line = document.createElement("div");
+        line.className = "cell-dish-line";
+        const badge = dishKindBadgeEl(dish.kind);
+        if (badge) line.appendChild(badge);
+        const title = document.createElement("span");
+        title.className = "cell-dish-title";
+        title.textContent = dish.title || "—";
+        line.appendChild(title);
+        if (isSameCoachEditing(iso, mealKey, dishIndex)) td.classList.add("cell-active");
+        line.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (isSameCoachEditing(iso, mealKey, dishIndex)) {
+            startNewCoachDish(iso, mealKey);
+            $("#cTitle").focus();
+            return;
+          }
+          populateCoachForm(iso, mealKey, dish, dishIndex);
+        });
+        list.appendChild(line);
+      });
+      td.appendChild(list);
+    }
+
+    function appendWeekTablePublishCell(tr, iso, local, published) {
+      const pubTd = document.createElement("td");
+      pubTd.className = "day-pub";
+      const status = dayPublishStatus(local[iso], published[iso]);
+      if (status.canPublish) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "cd-publish-btn";
+        btn.textContent = "Опубл.";
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          publishDayToGitHub(iso, btn);
+        });
+        pubTd.appendChild(btn);
+      } else {
+        const span = document.createElement("span");
+        span.className = "day-pub-status";
+        span.textContent = status.label;
+        pubTd.appendChild(span);
+      }
+      tr.appendChild(pubTd);
+    }
+
+    function renderCoachWeekTable(activeWeek, local, published) {
       const wrap = $("#coachWeekTable");
       if (!wrap) return;
       wrap.innerHTML = "";
-      coachForm.weekTableCtx = { activeWeek, local };
+      const pub = published || getPublishedOverrides();
+      coachForm.weekTableCtx = { activeWeek, local, published: pub };
 
       if (!activeWeek || typeof activeWeek !== "number" || !isCoachDesktopLayout()) {
         wrap.hidden = true;
@@ -6821,6 +7033,10 @@
         th.textContent = m.icon + " " + m.name;
         headRow.appendChild(th);
       });
+      const pubTh = document.createElement("th");
+      pubTh.className = "day-pub-h";
+      pubTh.textContent = "Опубл.";
+      headRow.appendChild(pubTh);
       thead.appendChild(headRow);
       table.appendChild(thead);
 
@@ -6842,34 +7058,13 @@
 
         MEAL_KEYS.forEach(m => {
           const td = document.createElement("td");
-          td.className = "cell";
           const slot = local[iso] && local[iso][m.key];
           const dishes = slot ? getDishes(slot) : [];
-          const dish = dishes.find(d => normalizeKind(d.kind) === "main") || dishes[0];
-
-          if (dish) {
-            td.classList.add("filled");
-            td.textContent = dish.title || "—";
-            const dishIndex = dishes.indexOf(dish);
-            if (isSameCoachEditing(iso, m.key, dishIndex)) td.classList.add("cell-active");
-            td.addEventListener("click", () => {
-              if (isSameCoachEditing(iso, m.key, dishIndex)) {
-                startNewCoachDish(iso, m.key);
-                $("#cTitle").focus();
-                return;
-              }
-              populateCoachForm(iso, m.key, dish, dishIndex);
-            });
-          } else {
-            td.classList.add("empty");
-            td.textContent = "пусто";
-            td.addEventListener("click", () => {
-              startNewCoachDish(iso, m.key);
-              $("#cTitle").focus();
-            });
-          }
+          fillWeekTableMealCell(td, iso, m.key, dishes);
           tr.appendChild(td);
         });
+
+        appendWeekTablePublishCell(tr, iso, local, pub);
         tbody.appendChild(tr);
       }
 
@@ -6960,7 +7155,7 @@
 
       if (totalDays === 0) {
         list.innerHTML = '<div class="muted" style="padding:12px 0">Ещё ничего не заполнено. Заполните форму слева — блюда появятся здесь и сразу попадут на вкладку «Меню».</div>';
-        renderCoachWeekTable(null, local);
+        renderCoachWeekTable(null, local, published);
         return;
       }
 
@@ -6998,7 +7193,7 @@
         switcher.appendChild(b);
       }
       list.appendChild(switcher);
-      renderCoachWeekTable(activeWeek, local);
+      renderCoachWeekTable(activeWeek, local, published);
 
       // Какие даты показать в активной неделе.
       let dates = [];
