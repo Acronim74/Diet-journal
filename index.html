@@ -3337,6 +3337,58 @@
       saveCoachOverrides(all);
     }
 
+    // Проверка: сохранение перезапишет уже существующее блюдо в том же приёме пищи?
+    function predictCoachDishOverwrite(dateIso, mealKey, dish, replaceIndex) {
+      const all = getCoachOverrides();
+      const prevSlot = all[dateIso] && all[dateIso][mealKey];
+      const dishes = getDishes(prevSlot);
+      if (!dishes.length) return { overwrite: false };
+
+      const e = coachForm.editing;
+      const isExplicitEdit = !!(e && e.date === dateIso && e.meal === mealKey &&
+        typeof replaceIndex === "number" && e.dishIndex === replaceIndex);
+
+      if (typeof replaceIndex === "number" && replaceIndex >= 0 && replaceIndex < dishes.length) {
+        if (isExplicitEdit) return { overwrite: false };
+        const existing = dishes[replaceIndex];
+        return {
+          overwrite: true,
+          existingTitle: (existing.title || "").trim() || "—",
+          existingKind: normalizeKind(existing.kind),
+          replaceIndex: replaceIndex
+        };
+      }
+
+      if (normalizeKind(dish.kind) === "main") {
+        const idx = dishes.findIndex(d => normalizeKind(d.kind) === "main");
+        if (idx >= 0) {
+          const existing = dishes[idx];
+          return {
+            overwrite: true,
+            existingTitle: (existing.title || "").trim() || "—",
+            existingKind: "main",
+            replaceIndex: idx
+          };
+        }
+      }
+
+      return { overwrite: false };
+    }
+
+    function confirmCoachDishOverwrite(info, dateIso, mealKey, newTitle) {
+      const mealName = (MEAL_DEF[mealKey] && MEAL_DEF[mealKey].name) || mealKey;
+      const dateRu = formatIsoRu(dateIso) || dateIso;
+      const kindLabels = { main: "основное", addon: "дополнение", alt: "альтернатива" };
+      const kindLabel = kindLabels[info.existingKind] || info.existingKind;
+      return confirm(
+        "В «" + mealName + "» на " + dateRu + " уже есть блюдо:\n\n" +
+        "«" + info.existingTitle + "» (" + kindLabel + ")\n\n" +
+        "Новое «" + newTitle + "» заменит его.\n\n" +
+        "Если хотите добавить отдельное блюдо — нажмите «Отмена» и выберите «Новое блюдо» или другой тип (доп./альт.).\n\n" +
+        "Всё равно сохранить и заменить?"
+      );
+    }
+
     // Удалить одно блюдо из слота; если слот пустеет — слот целиком; день пустеет — день целиком.
     function deleteCoachDish(dateIso, mealKey, dishIndex) {
       const all = getCoachOverrides();
@@ -5759,6 +5811,11 @@
           } else if (typeof coachForm.editing.dishIndex === "number") {
             deleteCoachDish(coachForm.editing.date, coachForm.editing.meal, coachForm.editing.dishIndex);
           }
+        }
+
+        const overwrite = predictCoachDishOverwrite(date, meal, dish, replaceIndex);
+        if (overwrite.overwrite && !confirmCoachDishOverwrite(overwrite, date, meal, title)) {
+          return;
         }
 
         setCoachDish(date, meal, dish, replaceIndex, slotOrderVal);
