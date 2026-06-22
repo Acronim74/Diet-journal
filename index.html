@@ -3597,7 +3597,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 42;
+    const APP_BUILD = 43;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -4852,9 +4852,23 @@
       saveShoppingHave(have);
       saveShoppingNeed(need);
     }
-    function buildShopDualChecks(key, haveSet, needSet, onRerender, stopProp) {
+    function buildShopDualChecks(key, haveSet, needSet, rowEl, stopProp) {
       const wrap = document.createElement("div");
       wrap.className = "shop-checks";
+
+      const syncRowMarks = () => {
+        const have = getShoppingHave();
+        const need = getShoppingNeed();
+        cbHave.checked = have.has(key);
+        cbBuy.checked = need.has(key);
+        if (rowEl) {
+          rowEl.classList.remove("has-stock", "to-buy");
+          if (have.has(key)) rowEl.classList.add("has-stock");
+          else if (need.has(key)) rowEl.classList.add("to-buy");
+        }
+        updateShopCounter();
+        renderTodayShopPreview();
+      };
 
       const cbHave = document.createElement("input");
       cbHave.type = "checkbox";
@@ -4865,7 +4879,7 @@
       if (stopProp) cbHave.addEventListener("click", e => e.stopPropagation());
       cbHave.addEventListener("change", () => {
         setShoppingItemStatus(key, cbHave.checked ? "have" : "none");
-        onRerender();
+        syncRowMarks();
       });
 
       const cbBuy = document.createElement("input");
@@ -4877,7 +4891,7 @@
       if (stopProp) cbBuy.addEventListener("click", e => e.stopPropagation());
       cbBuy.addEventListener("change", () => {
         setShoppingItemStatus(key, cbBuy.checked ? "need" : "none");
-        onRerender();
+        syncRowMarks();
       });
 
       wrap.appendChild(cbHave);
@@ -4997,6 +5011,28 @@
     }
 
     // ----- Основной рендер -----
+    function updateShopCounter() {
+      const todayIso = isoDate(new Date());
+      const allUsages = collectShoppingUsages();
+      const filter = getShoppingFilter();
+      const scopedUsages = filterUsagesByScope(allUsages, filter);
+      const aggregated = aggregateShoppingUsages(scopedUsages, todayIso);
+      const extras = getShoppingExtras();
+      const haveSet = getShoppingHave();
+      const allKeys = [
+        ...aggregated.map(a => a.key),
+        ...extras.map(e => shoppingKey(e, ""))
+      ];
+      const allCount = allKeys.length;
+      const haveCount = allKeys.filter(k => haveSet.has(k)).length;
+      const buyCount = allCount - haveCount;
+      const el = $("#shopCounter");
+      if (el) {
+        el.textContent =
+          scopeLabel(filter) + " · есть " + haveCount + " · купить " + buyCount + " / " + allCount;
+      }
+    }
+
     function renderShoppingTab() {
       const todayIso = isoDate(new Date());
       const allUsages = collectShoppingUsages();
@@ -5013,18 +5049,15 @@
       const haveSet = getShoppingHave();
       const needSet = getShoppingNeed();
 
-      const allKeys = [
-        ...aggregated.map(a => a.key),
-        ...extras.map(e => shoppingKey(e, ""))
-      ];
-      const allCount = allKeys.length;
-      const haveCount = allKeys.filter(k => haveSet.has(k)).length;
-      const buyCount = allCount - haveCount;
-      $("#shopCounter").textContent =
-        scopeLabel(filter) + " · есть " + haveCount + " · купить " + buyCount + " / " + allCount;
+      updateShopCounter();
 
       const list = $("#shopList");
       list.innerHTML = "";
+
+      const allCount = [
+        ...aggregated.map(a => a.key),
+        ...extras.map(e => shoppingKey(e, ""))
+      ].length;
 
       if (allCount === 0) {
         list.innerHTML = '<div class="muted" style="padding:14px 4px">' +
@@ -5137,7 +5170,7 @@
       }
       main.appendChild(chips);
       summary.appendChild(main);
-      summary.appendChild(buildShopDualChecks(item.key, haveSet, needSet, renderShoppingTab, true));
+      summary.appendChild(buildShopDualChecks(item.key, haveSet, needSet, det, true));
 
       const chev = document.createElement("span");
       chev.className = "row-chev";
@@ -5209,7 +5242,7 @@
       });
 
       row.appendChild(txt);
-      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
+      row.appendChild(buildShopDualChecks(key, haveSet, needSet, row, false));
       row.appendChild(del);
       return row;
     }
@@ -5307,7 +5340,7 @@
       else               qty.textContent = "";
       row.appendChild(qty);
 
-      row.appendChild(buildShopDualChecks(key, haveSet, needSet, renderShoppingTab, false));
+      row.appendChild(buildShopDualChecks(key, haveSet, needSet, row, false));
 
       return row;
     }
