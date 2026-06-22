@@ -545,6 +545,10 @@
       color: var(--peach-dark);
       border: 1px solid rgba(233, 175, 163, 0.5);
     }
+    .dish-badge.alt-full {
+      font-size: 11px;
+      padding: 2px 10px;
+    }
 
     /* Блок выбора альтернативы */
     .alt-picker {
@@ -1293,12 +1297,31 @@
     .ing-list:empty { margin: 0; }
     .ing-row {
       display: grid;
-      grid-template-columns: 22px minmax(0, 1fr) 72px 64px 28px;
+      grid-template-columns: 22px 26px minmax(0, 1fr) 72px 64px 28px;
       gap: 6px;
       align-items: center;
       padding: 8px 0;
       border-bottom: 1px solid var(--border);
       font-size: 14px;
+    }
+    .ing-move {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .ing-move-btn {
+      background: none;
+      border: 0;
+      padding: 0;
+      font-size: 10px;
+      line-height: 1;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .ing-move-btn:hover:not(:disabled) { color: var(--accent); }
+    .ing-move-btn:disabled {
+      opacity: 0.25;
+      cursor: default;
     }
     .ing-row:last-child { border-bottom: 0; }
     .ing-row .ing-text { flex: 1; }
@@ -1340,7 +1363,7 @@
     }
     .ing-row .del:hover { color: var(--accent); }
     .ing-row-alt {
-      grid-template-columns: 22px minmax(0, 1fr) 28px;
+      grid-template-columns: 22px 26px minmax(0, 1fr) 28px;
       align-items: start;
     }
     .ing-row-alt-body {
@@ -1383,7 +1406,7 @@
     }
     .ing-list-head {
       display: grid;
-      grid-template-columns: 22px minmax(0, 1fr) 72px 64px 28px;
+      grid-template-columns: 22px 26px minmax(0, 1fr) 72px 64px 28px;
       gap: 6px;
       font-size: 11px;
       font-weight: 600;
@@ -1694,7 +1717,70 @@
     .coach-week-table .cell-dish-title {
       min-width: 0;
       word-break: break-word;
+      flex: 1;
     }
+    .coach-week-table .cell-dish-actions {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      opacity: 0.55;
+    }
+    .coach-week-table .cell-dish-line:hover .cell-dish-actions { opacity: 1; }
+    .coach-week-table .cell-mini-btn {
+      background: none;
+      border: 0;
+      padding: 0 2px;
+      font-size: 11px;
+      line-height: 1.2;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .coach-week-table .cell-mini-btn:hover { color: var(--accent); }
+    .coach-week-table td.day-label {
+      position: relative;
+    }
+    .coach-week-table .day-label-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-start;
+    }
+    .coach-week-table .day-label-actions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .coach-week-table td.cell-paste-ready {
+      box-shadow: inset 0 0 0 2px var(--accent-soft);
+      cursor: copy;
+    }
+    .coach-week-table td.day-paste-ready {
+      box-shadow: inset 0 0 0 2px var(--accent-soft);
+    }
+    .coach-clipboard-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(127, 168, 138, 0.35);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--accent);
+    }
+    .coach-clipboard-bar[hidden] { display: none !important; }
+    .coach-clipboard-bar span { flex: 1; min-width: 0; }
+    .coach-clipboard-bar button {
+      background: none;
+      border: 0;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .coach-clipboard-bar button:hover { color: var(--accent); }
     .coach-week-table td.day-pub {
       text-align: center;
       vertical-align: middle;
@@ -2121,12 +2207,16 @@
       }
 
       body.coach-active .ing-row {
-        grid-template-columns: 22px minmax(0, 2fr) 88px 72px 32px;
+        grid-template-columns: 22px 26px minmax(0, 2fr) 88px 72px 32px;
         gap: 8px;
       }
 
+      body.coach-active .ing-row-alt {
+        grid-template-columns: 22px 26px minmax(0, 2fr) 32px;
+      }
+
       body.coach-active .ing-list-head {
-        grid-template-columns: 22px minmax(0, 2fr) 88px 72px 32px;
+        grid-template-columns: 22px 26px minmax(0, 2fr) 88px 72px 32px;
         gap: 8px;
       }
 
@@ -2649,7 +2739,7 @@
               <div class="form-hint coach-hint-long">
                 <b>Основное</b> — главное блюдо приёма пищи (одно на слот).
                 <b>Дополнение</b> — обязательная добавка (соус, чай, гарнир) — всегда вместе с основным.
-                <b>Альтернатива</b> — вариант на выбор «по кошельку»; участник выбирает один.
+                <b>Альтернатива</b> — другой вариант того же приёма (в меню показывается отдельно).
               </div>
             </div>
 
@@ -2679,6 +2769,7 @@
                 </div>
                 <div class="ing-recipe-block">
                   <div id="cIngListHead" class="ing-list-head" hidden>
+                    <span></span>
                     <span></span>
                     <span>Название</span>
                     <span>Кол-во</span>
@@ -3506,7 +3597,7 @@
     // ===========================================================
     // Загрузка и обновление данных (сеть → кэш SW → fallback)
     // ===========================================================
-    const APP_BUILD = 40;
+    const APP_BUILD = 42;
     let swReloadPending = false;
     let swListenerBound = false;
     let appInited = false;
@@ -4302,25 +4393,12 @@
         return row;
       }
 
-      const fixed = dishes.filter(d => d.kind !== "alt");
-      const alts  = dishes.filter(d => d.kind === "alt");
-
       const slot = document.createElement("div");
       slot.className = "meal-slot";
 
-      let isFirstRendered = true;
-      fixed.forEach(dish => {
-        slot.appendChild(renderDishBlock(dish, def, isFirstRendered, iso));
-        isFirstRendered = false;
+      sortDishesForDisplay(dishes).forEach((dish, i) => {
+        slot.appendChild(renderDishBlock(dish, def, i === 0, iso));
       });
-
-      if (alts.length > 0) {
-        const active = getActiveAlt(iso, def.key, alts);
-        slot.appendChild(renderAltPicker(iso, def.key, alts, active));
-        if (active) {
-          slot.appendChild(renderDishBlock(active, def, isFirstRendered, iso));
-        }
-      }
       return slot;
     }
 
@@ -4367,7 +4445,7 @@
         const h = document.createElement("h4");
         h.textContent = "Состав";
         body.appendChild(h);
-        body.appendChild(renderIngredientList(dish.ingredients, iso, def.key, title));
+        body.appendChild(renderIngredientList(dish.ingredients, true, iso, def.key, title));
       }
       if (typeof dish.recipe === "string" && dish.recipe.trim()) {
         const h = document.createElement("h4");
@@ -4394,14 +4472,14 @@
     }
 
     // Состав блюда: <ul> со смешанными ингредиентами.
-    // Альт-группа отображается одной строкой: [альт.] X ИЛИ Y ИЛИ Z — вес.
-    function renderIngredientList(ingredients /*, iso, mealKey, dishTitle */) {
+    // plainAlt — в меню альт-группы как обычный текст без выделения.
+    function renderIngredientList(ingredients, plainAlt /*, iso, mealKey, dishTitle */) {
       const ul = document.createElement("ul");
       ingredients.forEach(entry => {
         const parsed = parseIngredientEntry(entry);
         if (!parsed) return;
         const li = document.createElement("li");
-        if (parsed.kind === "single") {
+        if (parsed.kind === "single" || plainAlt) {
           li.textContent = typeof entry === "string" ? entry : ingredientToLabel(entry);
           ul.appendChild(li);
           return;
@@ -4449,7 +4527,7 @@
 
     function dishBadgeHTML(kind) {
       if (kind === "addon") return '<span class="dish-badge addon">доп.</span>';
-      if (kind === "alt")   return '<span class="dish-badge alt">альт.</span>';
+      if (kind === "alt")   return '<span class="dish-badge alt alt-full">альтернатива</span>';
       return "";
     }
 
@@ -4599,9 +4677,7 @@
       return "";
     }
 
-    // ----- Сбор всех использований ингредиентов из coach_overrides -----
-    // main + addon → всегда; alt-блюдо → только выбранное участником (по умолчанию первое).
-    // Альт-группа ингредиента → одна строка «X или Y или Z» (агрегируется по этому имени).
+    // main + addon + alt → все блюда; альт-группа ингредиента → одна строка «X или Y или Z».
     function collectShoppingUsages() {
       const overrides = getEffectiveOverrides() || {};
       const out = [];
@@ -4615,11 +4691,7 @@
           const dishes = getDishes(slot);
           if (dishes.length === 0) return;
 
-          const alts = dishes.filter(x => x.kind === "alt");
-          const activeAlt = alts.length ? getActiveAlt(iso, m.key, alts) : null;
-
           dishes.forEach(dish => {
-            if (dish.kind === "alt" && dish !== activeAlt) return;
             if (!Array.isArray(dish.ingredients)) return;
             dish.ingredients.forEach(entry => {
               const parsed = parseIngredientEntry(entry);
@@ -5483,7 +5555,8 @@
       ingredients: [],
       editing: null,        // { date, meal, dishIndex } — какое блюдо сейчас редактируется
       addingToGroup: null,  // null или { index: N } — индекс альт-группы в ingredients, в которую идёт следующий «+»
-      checkedIng: new Set() // индексы отмеченных ингредиентов для подсчёта итога
+      checkedIng: new Set(), // индексы отмеченных ингредиентов для подсчёта итога
+      clipboard: null       // { type: "dish", dish, label } | { type: "day", day, label }
     };
 
     function coachIngWeightStr(qty, unit) {
@@ -5537,6 +5610,135 @@
         else if (i > deletedIdx) next.add(i - 1);
       });
       coachForm.checkedIng = next;
+    }
+
+    function swapCoachIngredientIndices(a, b) {
+      const checked = coachForm.checkedIng;
+      const hasA = checked.has(a);
+      const hasB = checked.has(b);
+      if (hasA) { checked.delete(a); checked.add(b); }
+      if (hasB) { checked.delete(b); checked.add(a); }
+      if (coachForm.addingToGroup) {
+        const gi = coachForm.addingToGroup.index;
+        if (gi === a) coachForm.addingToGroup.index = b;
+        else if (gi === b) coachForm.addingToGroup.index = a;
+      }
+    }
+
+    function moveCoachIngredient(idx, dir) {
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= coachForm.ingredients.length) return;
+      const arr = coachForm.ingredients;
+      const tmp = arr[idx];
+      arr[idx] = arr[newIdx];
+      arr[newIdx] = tmp;
+      swapCoachIngredientIndices(idx, newIdx);
+      renderCoachIngList();
+    }
+
+    function appendIngMoveButtons(row, idx, total) {
+      const move = document.createElement("div");
+      move.className = "ing-move";
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "ing-move-btn";
+      up.textContent = "▲";
+      up.title = "Выше";
+      up.disabled = idx === 0;
+      up.addEventListener("click", () => moveCoachIngredient(idx, -1));
+      const down = document.createElement("button");
+      down.type = "button";
+      down.className = "ing-move-btn";
+      down.textContent = "▼";
+      down.title = "Ниже";
+      down.disabled = idx >= total - 1;
+      down.addEventListener("click", () => moveCoachIngredient(idx, 1));
+      move.appendChild(up);
+      move.appendChild(down);
+      row.appendChild(move);
+    }
+
+    function setCoachClipboard(item) {
+      coachForm.clipboard = item;
+      updateCoachClipboardBar();
+      refreshCoachWeekTableHighlight();
+    }
+
+    function clearCoachClipboard() {
+      coachForm.clipboard = null;
+      updateCoachClipboardBar();
+      refreshCoachWeekTableHighlight();
+    }
+
+    function updateCoachClipboardBar() {
+      const bar = $("#coachClipboardBar");
+      const text = $("#coachClipboardText");
+      if (!bar || !text) return;
+      const cb = coachForm.clipboard;
+      if (!cb) {
+        bar.hidden = true;
+        return;
+      }
+      bar.hidden = false;
+      text.textContent = cb.type === "day"
+        ? "Скопирован день: " + cb.label + ". Нажмите «Вставить» у нужного дня."
+        : "Скопировано блюдо: «" + cb.label + "». Нажмите «Вставить» в ячейке приёма пищи.";
+    }
+
+    function copyCoachDishToClipboard(dish, mealName) {
+      const title = (dish.title || "").trim() || "—";
+      setCoachClipboard({
+        type: "dish",
+        dish: deepClone(dish),
+        label: title + (mealName ? " (" + mealName + ")" : "")
+      });
+      toast("Блюдо скопировано");
+    }
+
+    function copyCoachDayToClipboard(iso, local) {
+      const day = local[iso];
+      if (!day || !Object.keys(day).length) return;
+      setCoachClipboard({
+        type: "day",
+        day: deepClone(day),
+        label: formatIsoRu(iso) || iso
+      });
+      toast("День скопирован");
+    }
+
+    function pasteCoachDishToSlot(toIso, toMealKey) {
+      const cb = coachForm.clipboard;
+      if (!cb || cb.type !== "dish") return;
+      const dish = deepClone(cb.dish);
+      const title = (dish.title || "").trim() || "—";
+      const overwrite = predictCoachDishOverwrite(toIso, toMealKey, dish, null);
+      if (overwrite.overwrite && !confirmCoachDishOverwrite(overwrite, toIso, toMealKey, title)) return;
+      setCoachDish(toIso, toMealKey, dish, null, null);
+      toast("Блюдо вставлено");
+      renderCoachList();
+      renderPublishUI();
+      renderMenuTab();
+      renderShoppingTab();
+      renderMoreTab();
+    }
+
+    function pasteCoachDayToDate(toIso) {
+      const cb = coachForm.clipboard;
+      if (!cb || cb.type !== "day") return;
+      const all = getCoachOverrides();
+      const existing = all[toIso];
+      if (existing && Object.keys(existing).length > 0) {
+        const dateRu = formatIsoRu(toIso) || toIso;
+        if (!confirm("В " + dateRu + " уже есть меню.\n\nЗаменить целиком скопированным днём?")) return;
+      }
+      all[toIso] = deepClone(cb.day);
+      saveCoachOverrides(all);
+      toast("День вставлен");
+      renderCoachList();
+      renderPublishUI();
+      renderMenuTab();
+      renderShoppingTab();
+      renderMoreTab();
     }
 
     function updateIngTotal() {
@@ -6757,6 +6959,7 @@
           updateIngTotal();
         });
         row.appendChild(chk);
+        appendIngMoveButtons(row, idx, coachForm.ingredients.length);
 
         if (isAlt) {
           const body = document.createElement("div");
@@ -7003,12 +7206,20 @@
 
     function fillWeekTableMealCell(td, iso, mealKey, dishes) {
       td.className = "cell";
+      const mealName = (MEAL_DEF[mealKey] && MEAL_DEF[mealKey].name) || mealKey;
+      const dishClipboard = coachForm.clipboard && coachForm.clipboard.type === "dish";
+
+      if (dishClipboard) td.classList.add("cell-paste-ready");
+
       if (!dishes.length) {
         td.classList.add("empty");
-        td.textContent = "пусто";
+        const emptyText = document.createElement("span");
+        emptyText.textContent = dishClipboard ? "вставить" : "пусто";
+        td.appendChild(emptyText);
         td.addEventListener("click", () => {
-          startNewCoachDish(iso, mealKey);
-          $("#cTitle").focus();
+          if (dishClipboard) pasteCoachDishToSlot(iso, mealKey);
+          else startNewCoachDish(iso, mealKey);
+          if (!dishClipboard) $("#cTitle").focus();
         });
         return;
       }
@@ -7026,6 +7237,21 @@
         title.className = "cell-dish-title";
         title.textContent = dish.title || "—";
         line.appendChild(title);
+
+        const actions = document.createElement("span");
+        actions.className = "cell-dish-actions";
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "cell-mini-btn";
+        copyBtn.textContent = "⎘";
+        copyBtn.title = "Копировать блюдо";
+        copyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          copyCoachDishToClipboard(dish, mealName);
+        });
+        actions.appendChild(copyBtn);
+        line.appendChild(actions);
+
         if (isSameCoachEditing(iso, mealKey, dishIndex)) td.classList.add("cell-active");
         line.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -7039,6 +7265,19 @@
         list.appendChild(line);
       });
       td.appendChild(list);
+
+      if (dishClipboard) {
+        const pasteRow = document.createElement("button");
+        pasteRow.type = "button";
+        pasteRow.className = "cell-mini-btn";
+        pasteRow.style.marginTop = "4px";
+        pasteRow.textContent = "Вставить";
+        pasteRow.addEventListener("click", (e) => {
+          e.stopPropagation();
+          pasteCoachDishToSlot(iso, mealKey);
+        });
+        td.appendChild(pasteRow);
+      }
     }
 
     function appendWeekTablePublishCell(tr, iso, local, published) {
@@ -7073,12 +7312,33 @@
 
       if (!activeWeek || typeof activeWeek !== "number" || !isCoachDesktopLayout()) {
         wrap.hidden = true;
+        updateCoachClipboardBar();
         return;
       }
 
       const weekStart = getWeekStartForWeekNum(activeWeek);
       const marathonStart = getMarathonStart();
       const marathonEnd = getMarathonEnd();
+
+      const clipBar = document.createElement("div");
+      clipBar.id = "coachClipboardBar";
+      clipBar.className = "coach-clipboard-bar";
+      clipBar.hidden = !coachForm.clipboard;
+      const clipText = document.createElement("span");
+      clipText.id = "coachClipboardText";
+      const clipClear = document.createElement("button");
+      clipClear.type = "button";
+      clipClear.id = "coachClipboardClear";
+      clipClear.title = "Очистить буфер";
+      clipClear.textContent = "×";
+      clipClear.addEventListener("click", () => {
+        clearCoachClipboard();
+        toast("Буфер очищен");
+      });
+      clipBar.appendChild(clipText);
+      clipBar.appendChild(clipClear);
+      wrap.appendChild(clipBar);
+      updateCoachClipboardBar();
 
       const table = document.createElement("table");
       table.className = "coach-week-table";
@@ -7109,8 +7369,41 @@
 
         const dayTd = document.createElement("td");
         dayTd.className = "day-label";
-        dayTd.textContent = DAYS_SHORT_RU[date.getDay()] + " " +
+        const dayWrap = document.createElement("div");
+        dayWrap.className = "day-label-row";
+        const dayText = document.createElement("span");
+        dayText.textContent = DAYS_SHORT_RU[date.getDay()] + " " +
           pad2(date.getDate()) + "." + pad2(date.getMonth() + 1);
+        dayWrap.appendChild(dayText);
+
+        const dayActions = document.createElement("div");
+        dayActions.className = "day-label-actions";
+        const dayCopyBtn = document.createElement("button");
+        dayCopyBtn.type = "button";
+        dayCopyBtn.className = "cell-mini-btn";
+        dayCopyBtn.textContent = "Коп. день";
+        dayCopyBtn.title = "Копировать меню этого дня";
+        dayCopyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          copyCoachDayToClipboard(iso, local);
+        });
+        dayActions.appendChild(dayCopyBtn);
+
+        if (coachForm.clipboard && coachForm.clipboard.type === "day") {
+          dayTd.classList.add("day-paste-ready");
+          const dayPasteBtn = document.createElement("button");
+          dayPasteBtn.type = "button";
+          dayPasteBtn.className = "cell-mini-btn";
+          dayPasteBtn.textContent = "Вставить";
+          dayPasteBtn.title = "Вставить скопированный день";
+          dayPasteBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            pasteCoachDayToDate(iso);
+          });
+          dayActions.appendChild(dayPasteBtn);
+        }
+        dayWrap.appendChild(dayActions);
+        dayTd.appendChild(dayWrap);
         tr.appendChild(dayTd);
 
         MEAL_KEYS.forEach(m => {
@@ -7196,6 +7489,26 @@
 
       const local     = getCoachOverrides();
       const published = getPublishedOverrides();
+
+      if (coachForm.clipboard) {
+        const clipBar = document.createElement("div");
+        clipBar.className = "coach-clipboard-bar";
+        const clipText = document.createElement("span");
+        clipText.textContent = coachForm.clipboard.type === "day"
+          ? "Скопирован день: " + coachForm.clipboard.label + ". Нажмите «Вставить» у нужного дня."
+          : "Скопировано блюдо: «" + coachForm.clipboard.label + "». Нажмите «Вставить» у приёма пищи.";
+        const clipClear = document.createElement("button");
+        clipClear.type = "button";
+        clipClear.title = "Очистить буфер";
+        clipClear.textContent = "×";
+        clipClear.addEventListener("click", () => {
+          clearCoachClipboard();
+          toast("Буфер очищен");
+        });
+        clipBar.appendChild(clipText);
+        clipBar.appendChild(clipClear);
+        list.appendChild(clipBar);
+      }
 
       // Все даты, которые надо показать (есть локально или опубликовано).
       const allDates = new Set([...Object.keys(local), ...Object.keys(published)]);
@@ -7310,6 +7623,12 @@
         '</div>' +
         '<div class="cd-controls">' +
           '<span class="cd-status status-' + status.kind + '">' + escHTML(status.label) + '</span>' +
+          (localDay && Object.keys(localDay).length
+            ? '<button class="cd-copy-day-btn" type="button" data-copy-day="' + iso + '">Коп.</button>'
+            : '') +
+          (coachForm.clipboard && coachForm.clipboard.type === "day"
+            ? '<button class="cd-paste-day-btn" type="button" data-paste-day="' + iso + '">Вст.</button>'
+            : '') +
           (status.canPublish
             ? '<button class="cd-publish-btn" type="button" data-pub-date="' + iso + '">Опубл.</button>'
             : '') +
@@ -7322,6 +7641,22 @@
           e.preventDefault();
           e.stopPropagation();
           publishDayToGitHub(iso, pubBtn);
+        });
+      }
+      const copyDayBtn = sum.querySelector(".cd-copy-day-btn");
+      if (copyDayBtn) {
+        copyDayBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          copyCoachDayToClipboard(iso, getCoachOverrides());
+        });
+      }
+      const pasteDayBtn = sum.querySelector(".cd-paste-day-btn");
+      if (pasteDayBtn) {
+        pasteDayBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          pasteCoachDayToDate(iso);
         });
       }
 
@@ -7386,6 +7721,22 @@
           populateCoachForm(date, mealKey, dish, dishIndex);
         });
         row.appendChild(edit);
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "cm-edit"; copyBtn.type = "button"; copyBtn.textContent = "⎘";
+        copyBtn.title = "Копировать блюдо";
+        copyBtn.addEventListener("click", () => {
+          copyCoachDishToClipboard(dish, def.name);
+        });
+        row.appendChild(copyBtn);
+
+        if (coachForm.clipboard && coachForm.clipboard.type === "dish") {
+          const pasteBtn = document.createElement("button");
+          pasteBtn.className = "cm-edit"; pasteBtn.type = "button"; pasteBtn.textContent = "Вст.";
+          pasteBtn.title = "Вставить скопированное блюдо в этот приём";
+          pasteBtn.addEventListener("click", () => pasteCoachDishToSlot(date, mealKey));
+          row.appendChild(pasteBtn);
+        }
 
         const del = document.createElement("button");
         del.className = "cm-del"; del.type = "button"; del.textContent = "×";
