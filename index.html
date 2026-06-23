@@ -653,6 +653,24 @@
       color: var(--text);
     }
 
+    /* Альт-ингредиент в меню: метка «альтернатива», без рамки и радио */
+    li.ing-alt-menu {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    li.ing-alt-menu .dish-badge-sm.alt { flex-shrink: 0; }
+    li.ing-alt-menu .ing-alt-or {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 0 2px;
+    }
+    li.ing-alt-menu .ing-alt-weight {
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+
     /* Альт-ингредиент в списке коуч-формы */
     .ing-row.ing-row-alt {
       background: var(--peach-soft);
@@ -4472,23 +4490,23 @@
     }
 
     // Состав блюда: <ul> со смешанными ингредиентами.
-    // plainAlt — в меню альт-группы как обычный текст без выделения.
-    function renderIngredientList(ingredients, plainAlt /*, iso, mealKey, dishTitle */) {
+    // menuMode — в меню: альт-группы с меткой «альтернатива», без рамки и радио.
+    function renderIngredientList(ingredients, menuMode /*, iso, mealKey, dishTitle */) {
       const ul = document.createElement("ul");
       ingredients.forEach(entry => {
         const parsed = parseIngredientEntry(entry);
         if (!parsed) return;
         const li = document.createElement("li");
-        if (parsed.kind === "single" || plainAlt) {
+        if (parsed.kind === "single") {
           li.textContent = typeof entry === "string" ? entry : ingredientToLabel(entry);
           ul.appendChild(li);
           return;
         }
-        // Альт-группа: бейдж + «X ИЛИ Y ИЛИ Z» + общий вес справа.
-        li.className = "ing-alt-row";
+
+        li.className = menuMode ? "ing-alt-menu" : "ing-alt-row";
         const badge = document.createElement("span");
         badge.className = "dish-badge-sm alt";
-        badge.textContent = "альт.";
+        badge.textContent = menuMode ? "альтернатива" : "альт.";
         li.appendChild(badge);
 
         if (parsed.label) {
@@ -4502,7 +4520,7 @@
           if (i > 0) {
             const or = document.createElement("span");
             or.className = "ing-alt-or";
-            or.textContent = "ИЛИ";
+            or.textContent = menuMode ? "или" : "ИЛИ";
             li.appendChild(or);
           }
           const name = document.createElement("span");
